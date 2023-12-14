@@ -1,1 +1,1 @@
-.NET MAUI MVVM navigation framework. It supports regular/modal navigation, opening/closing windows, regions
+.NET MAUI popup library which allows you to open MAUI pages as a popup. Also the library allows you to use very simple and flexible animations for showing popup pages.
