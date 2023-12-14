@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<popup:PopupPage x:Class="Sample.PopupTestPage"
+                 xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+                 xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+                 xmlns:popup="clr-namespace:MPowerKit.Popups;assembly=MPowerKit.Popups"
+                 Title="PopupTestPage">
+    <Grid BackgroundColor="Red"
+          HeightRequest="500"
+          HorizontalOptions="Center"
+          RowDefinitions="*,Auto"
+          VerticalOptions="Center">
+        <Label HorizontalOptions="Center"
+               Text="Welcome to .NET MAUI!"
+               VerticalOptions="Center" />
+        <Entry Grid.Row="1" />
+    </Grid>
+</popup:PopupPage>

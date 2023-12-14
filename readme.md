@@ -1,0 +1,1 @@
+.NET MAUI MVVM navigation framework. It supports regular/modal navigation, opening/closing windows, regions
