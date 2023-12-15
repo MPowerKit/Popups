@@ -6,6 +6,10 @@ public class FadeAnimation : BaseAnimation
 {
     private double _defaultOpacity;
 
+#if IOS || MACCATALYST
+    private Color? _backgroundColor;
+#endif
+
     public bool HasBackgroundAnimation { get; set; } = true;
 
     public override void Preparing(View content, PopupPage page)
@@ -14,6 +18,12 @@ public class FadeAnimation : BaseAnimation
         {
             _defaultOpacity = page.Opacity;
             page.Opacity = 0;
+
+#if IOS || MACCATALYST
+            _backgroundColor = page.BackgroundColor;
+
+            page.BackgroundColor = GetColor(0);
+#endif
         }
         else if (content is not null)
         {
@@ -24,9 +34,17 @@ public class FadeAnimation : BaseAnimation
 
     public override void Disposing(View content, PopupPage page)
     {
-        if (!HasBackgroundAnimation && content is null) return;
-
-        page.Opacity = _defaultOpacity;
+        if (HasBackgroundAnimation)
+        {
+            page.Opacity = _defaultOpacity;
+#if IOS || MACCATALYST
+            page.BackgroundColor = _backgroundColor;
+#endif
+        }
+        else if (content is not null)
+        {
+            content.Opacity = _defaultOpacity;
+        }
     }
 
     public override Task Appearing(View content, PopupPage page)
@@ -35,7 +53,25 @@ public class FadeAnimation : BaseAnimation
 
         if (HasBackgroundAnimation)
         {
-            return page.FadeTo(_defaultOpacity, (uint)DurationIn.TotalMilliseconds, EasingIn);
+            List<Task> tasks = [];
+#if IOS || MACCATALYST
+            var tcs = new TaskCompletionSource();
+
+            page.Animate("backgroundFadeIn",
+                d =>
+                {
+                    page.BackgroundColor = GetColor((float)d);
+                }, 0, _backgroundColor.Alpha, length: (uint)DurationIn.TotalMilliseconds, easing: EasingIn,
+                finished: (d, b) =>
+                {
+                    tcs.SetResult();
+                });
+
+            tasks.Add(tcs.Task);
+#endif
+            tasks.Add(page.FadeTo(_defaultOpacity, (uint)DurationIn.TotalMilliseconds, EasingIn));
+
+            return Task.WhenAll(tasks);
         }
         if (content is not null)
         {
@@ -49,7 +85,27 @@ public class FadeAnimation : BaseAnimation
     {
         if (HasBackgroundAnimation)
         {
-            return page.FadeTo(0, (uint)DurationOut.TotalMilliseconds, EasingOut);
+            List<Task> tasks = [];
+#if IOS || MACCATALYST
+            var tcs = new TaskCompletionSource();
+
+            _backgroundColor = page.BackgroundColor;
+
+            page.Animate("backgroundFadeOut",
+                d =>
+                {
+                    page.BackgroundColor = GetColor((float)d);
+                }, _backgroundColor.Alpha, 0, length: (uint)DurationOut.TotalMilliseconds, easing: EasingOut,
+                finished: (d, b) =>
+                {
+                    tcs.SetResult();
+                });
+
+            tasks.Add(tcs.Task);
+#endif
+            tasks.Add(page.FadeTo(0, (uint)DurationOut.TotalMilliseconds, EasingOut));
+
+            return Task.WhenAll(tasks);
         }
         if (content is not null)
         {
@@ -58,4 +114,11 @@ public class FadeAnimation : BaseAnimation
 
         return Task.CompletedTask;
     }
+
+#if IOS || MACCATALYST
+    private Color? GetColor(float transparent)
+    {
+        return _backgroundColor?.WithAlpha(transparent);
+    }
+#endif
 }

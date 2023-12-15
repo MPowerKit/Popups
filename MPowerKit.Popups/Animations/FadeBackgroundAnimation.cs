@@ -2,7 +2,7 @@
 
 namespace MPowerKit.Popups.Animations;
 
-public abstract class FadeBackgroundAnimation : BaseAnimation
+public class FadeBackgroundAnimation : BaseAnimation
 {
     private Color? _backgroundColor;
 
@@ -30,11 +30,11 @@ public abstract class FadeBackgroundAnimation : BaseAnimation
 
         var tcs = new TaskCompletionSource();
 
-        page.Animate("backgroundFade",
+        page.Animate("backgroundFadeIn",
             d =>
             {
                 page.BackgroundColor = GetColor((float)d);
-            }, 0, _backgroundColor.Alpha, length: (uint)DurationIn.TotalMilliseconds,
+            }, 0, _backgroundColor.Alpha, length: (uint)DurationIn.TotalMilliseconds, easing: EasingIn,
             finished: (d, b) =>
             {
                 tcs.SetResult();
@@ -51,11 +51,11 @@ public abstract class FadeBackgroundAnimation : BaseAnimation
 
         _backgroundColor = page.BackgroundColor;
 
-        page.Animate("backgroundFade",
+        page.Animate("backgroundFadeOut",
             d =>
             {
                 page.BackgroundColor = GetColor((float)d);
-            }, _backgroundColor.Alpha, 0, length: (uint)DurationOut.TotalMilliseconds,
+            }, _backgroundColor.Alpha, 0, length: (uint)DurationOut.TotalMilliseconds, easing: EasingOut,
             finished: (d, b) =>
             {
                 tcs.SetResult();

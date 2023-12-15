@@ -24,8 +24,6 @@ public class MoveAnimation : FadeBackgroundAnimation
     {
         base.Preparing(content, page);
 
-        HidePage(page);
-
         if (content is null) return;
 
         UpdateDefaultTranslations(content);
@@ -34,8 +32,6 @@ public class MoveAnimation : FadeBackgroundAnimation
     public override void Disposing(View content, PopupPage page)
     {
         base.Disposing(content, page);
-
-        ShowPage(page);
 
         if (content is null) return;
 
@@ -73,12 +69,10 @@ public class MoveAnimation : FadeBackgroundAnimation
             taskList.Add(content.TranslateTo(_defaultTranslationX, _defaultTranslationY, (uint)DurationIn.TotalMilliseconds, EasingIn));
         }
 
-        ShowPage(page);
-
         return Task.WhenAll(taskList);
     }
 
-    public override async Task Disappearing(View content, PopupPage page)
+    public override Task Disappearing(View content, PopupPage page)
     {
         List<Task> taskList = [base.Disappearing(content, page)];
 
@@ -113,9 +107,7 @@ public class MoveAnimation : FadeBackgroundAnimation
             taskList.Add(content.TranslateTo(translationX, translationY, (uint)DurationOut.TotalMilliseconds, EasingOut));
         }
 
-        await Task.WhenAll(taskList);
-
-        HidePage(page);
+        return Task.WhenAll(taskList);
     }
 
     private void UpdateDefaultTranslations(View content)

@@ -54,14 +54,4 @@ public abstract class BaseAnimation : IPopupAnimation
     {
         return (content.Width + page.Width) / 2.0;
     }
-
-    protected virtual void HidePage(Page page)
-    {
-        page.Opacity = 0;
-    }
-
-    protected virtual void ShowPage(Page page)
-    {
-        page.Dispatcher.Dispatch(() => page.Opacity = 1);
-    }
 }

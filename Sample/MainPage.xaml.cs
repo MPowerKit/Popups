@@ -25,8 +25,6 @@ public partial class MainPage
         else
             CounterBtn.Text = $"Clicked {count} times";
 
-        SemanticScreenReader.Announce(CounterBtn.Text);
-
-        PopupService.ShowPopupAsync(new PopupTestPage() { CloseOnBackgroundClick = true });
+        PopupService.ShowPopupAsync(new PopupTestPage() { CloseOnBackgroundClick = true, BackgroundInputTransparent = false });
     }
 }

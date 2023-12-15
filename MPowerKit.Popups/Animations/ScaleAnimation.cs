@@ -3,7 +3,6 @@
 public class ScaleAnimation : FadeAnimation
 {
     private double _defaultScale;
-    private double _defaultOpacity;
     private double _defaultTranslationX;
     private double _defaultTranslationY;
 
@@ -22,33 +21,26 @@ public class ScaleAnimation : FadeAnimation
         EasingIn = Easing.SinOut;
         EasingOut = Easing.SinIn;
 
-        if (PositionIn is not MoveAnimationOptions.Center) DurationIn = TimeSpan.FromMilliseconds(500);
-        if (PositionOut is not MoveAnimationOptions.Center) DurationOut = TimeSpan.FromMilliseconds(500);
+        if (PositionIn is not MoveAnimationOptions.Center) DurationIn = TimeSpan.FromMilliseconds(400);
+        if (PositionOut is not MoveAnimationOptions.Center) DurationOut = TimeSpan.FromMilliseconds(400);
     }
 
     public override void Preparing(View content, PopupPage page)
     {
-        if (HasBackgroundAnimation) base.Preparing(content, page);
-
-        HidePage(page);
+        base.Preparing(content, page);
 
         if (content == null) return;
 
         UpdateDefaultProperties(content);
-
-        if (!HasBackgroundAnimation) content.Opacity = 0;
     }
 
     public override void Disposing(View content, PopupPage page)
     {
-        if (HasBackgroundAnimation) base.Disposing(content, page);
-
-        ShowPage(page);
+        base.Disposing(content, page);
 
         if (content == null) return;
 
         content.Scale = _defaultScale;
-        content.Opacity = _defaultOpacity;
         content.TranslationX = _defaultTranslationX;
         content.TranslationY = _defaultTranslationY;
     }
@@ -88,12 +80,10 @@ public class ScaleAnimation : FadeAnimation
             }
         }
 
-        ShowPage(page);
-
         return Task.WhenAll(taskList);
     }
 
-    public async override Task Disappearing(View content, PopupPage page)
+    public override Task Disappearing(View content, PopupPage page)
     {
         List<Task> taskList = [base.Disappearing(content, page)];
 
@@ -130,9 +120,7 @@ public class ScaleAnimation : FadeAnimation
             taskList.Add(content.TranslateTo(translationX, translationY, (uint)DurationOut.TotalMilliseconds, EasingOut));
         }
 
-        await Task.WhenAll(taskList);
-
-        HidePage(page);
+        return Task.WhenAll(taskList);
     }
 
     private Task Scale(View content, Easing easing, double start, double end, bool isAppearing)
@@ -157,10 +145,6 @@ public class ScaleAnimation : FadeAnimation
     private void UpdateDefaultProperties(View content)
     {
         _defaultScale = content.Scale;
-        _defaultOpacity = content.Opacity;
-
-        if (double.IsNaN(_defaultOpacity)) _defaultOpacity = 1;
-
         _defaultTranslationX = content.TranslationX;
         _defaultTranslationY = content.TranslationY;
     }
