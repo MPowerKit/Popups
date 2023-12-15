@@ -24,28 +24,28 @@ public partial class PopupService : IPopupService
         return ShowPopupAsync(page, window, animated);
     }
 
-    public virtual async Task ShowPopupAsync(PopupPage page, Window? parentWindow, bool animated = true)
+    public virtual async Task ShowPopupAsync(PopupPage page, Window? attachToWindow, bool animated = true)
     {
         if (PopupStack.Contains(page))
         {
             throw new InvalidOperationException("This popup already presented");
         }
-        if (parentWindow is null)
+        if (attachToWindow is null)
         {
             throw new InvalidOperationException("Parent window not found");
         }
 
         animated = animated && AnimationHelper.SystemAnimationsEnabled;
 
-        var pageHandler = page.ToHandler(parentWindow.Handler.MauiContext!);
+        var pageHandler = page.ToHandler(attachToWindow.Handler.MauiContext!);
 
-        page.Parent = parentWindow;
+        page.Parent = attachToWindow;
 
         page.RequestClose += async (s, e) =>
         {
             try
             {
-                await HidePopupAsync(page, parentWindow, animated);
+                await HidePopupAsync(page, animated);
             }
             catch { }
         };
@@ -55,7 +55,7 @@ public partial class PopupService : IPopupService
             page.PreparingAnimation();
         }
 
-        AttachToWindow(page, pageHandler, parentWindow!);
+        AttachToWindow(page, pageHandler, attachToWindow!);
         page.SendAppearing();
 
         PopupStack.Add(page);
@@ -80,12 +80,10 @@ public partial class PopupService : IPopupService
 
     public virtual Task HidePopupAsync(PopupPage page, bool animated = true)
     {
-        var window = Application.Current?.Windows.FirstOrDefault();
-
-        return HidePopupAsync(page, window, animated);
+        return HidePopupAsync(page, page.Window, animated);
     }
 
-    public virtual async Task HidePopupAsync(PopupPage page, Window parentWindow, bool animated = true)
+    protected virtual async Task HidePopupAsync(PopupPage page, Window parentWindow, bool animated = true)
     {
         if (!PopupStack.Contains(page))
         {

@@ -38,7 +38,8 @@ public partial class PopupService
             {
                 page.SendBackgroundClick();
             }
-        });
+        })
+        { CancelsTouchesInView = false };
 
         handler.ViewController.View.AddGestureRecognizer(gr);
 

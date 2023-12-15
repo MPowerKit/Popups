@@ -8,7 +8,7 @@ public static class BuilderExtensions
 {
     public static MauiAppBuilder UseMPowerKitPopups(this MauiAppBuilder builder)
     {
-        builder.Services.AddScoped(sp => PopupService.Current);
+        builder.Services.AddSingleton(PopupService.Current);
 #if ANDROID
         builder
             .ConfigureLifecycleEvents(lifecycle =>

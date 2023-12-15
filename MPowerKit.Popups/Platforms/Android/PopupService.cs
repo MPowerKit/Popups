@@ -1,4 +1,7 @@
-﻿using Microsoft.Maui.Platform;
+﻿using Android.Content;
+using Android.Views.InputMethods;
+
+using Microsoft.Maui.Platform;
 
 namespace MPowerKit.Popups;
 
@@ -8,7 +11,9 @@ public partial class PopupService
     {
         HandleAccessibility(true, page.DisableAndroidAccessibilityHandling, parentWindow);
 
-        var dv = (parentWindow.Handler.PlatformView as Android.App.Activity)?.Window?.DecorView as Android.Views.ViewGroup
+        var activity = (parentWindow.Handler.PlatformView as Android.App.Activity);
+
+        var dv = activity?.Window?.DecorView as Android.Views.ViewGroup
             ?? throw new InvalidOperationException("DecorView of Activity not found");
 
         var handler = pageHandler as IPlatformViewHandler;
@@ -21,6 +26,36 @@ public partial class PopupService
         handler.PlatformView.ViewDetachedFromWindow += (s, e) =>
         {
             dv.Context.HideKeyboard(dv);
+        };
+
+        bool keyboardVisible = false;
+
+        handler.PlatformView.ViewTreeObserver.GlobalLayout += (s, e) =>
+        {
+            var view = dv.FindViewById(Android.Resource.Id.Content);
+
+            var r = new Android.Graphics.Rect();
+            view.GetWindowVisibleDisplayFrame(r);
+            int screenHeight = view.RootView.Height;
+
+            // r.bottom is the position above soft keypad or device button.
+            // if keypad is shown, the r.bottom is smaller than that before.
+            int keypadHeight = screenHeight - r.Bottom;
+
+            if (keypadHeight > screenHeight * 0.15)
+            {
+                if (!keyboardVisible)
+                {
+                    keyboardVisible = true;
+                }
+            }
+            else
+            {
+                if (keyboardVisible)
+                {
+                    keyboardVisible = false;
+                }
+            }
         };
 
         handler.PlatformView.Touch += (s, e) =>
@@ -39,12 +74,31 @@ public partial class PopupService
                 if (rawx >= childx && rawx <= (child.Width + childx)
                     && rawy >= childy && rawy <= (child.Height + childy))
                 {
+                    if (keyboardVisible)
+                    {
+                        view.Context.HideKeyboard(view);
+                        view.FindFocus()?.ClearFocus();
+                    }
+
                     e.Handled = true;
                     return;
                 }
             }
 
-            page.SendBackgroundClick();
+            if (e.Event.Action is Android.Views.MotionEventActions.Down)
+            {
+                var imm = (InputMethodManager)view.Context.GetSystemService(Context.InputMethodService);
+
+                if (!page.BackgroundInputTransparent && keyboardVisible)
+                {
+                    view.Context.HideKeyboard(view);
+                    view.FindFocus()?.ClearFocus();
+                    e.Handled = true;
+                    return;
+                }
+
+                page.SendBackgroundClick();
+            }
 
             e.Handled = !page.BackgroundInputTransparent;
         };

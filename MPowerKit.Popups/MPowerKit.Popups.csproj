@@ -19,7 +19,7 @@
 		<Title>MPowerKit.Popups</Title>
 		<Version>1.0.0</Version>
 		<Authors>MPowerKit</Authors>
-		<Description>.NET MAUI MVVM navigation framework. It supports regular/modal navigation, opening/closing windows, regions</Description>
+		<Description>.NET MAUI popup library which allows you to open MAUI pages as a popup. Also the library allows you to use very simple and flexible animations for showing popup pages.</Description>
 		<Copyright>MPowerKit</Copyright>
 		<PackageProjectUrl>https://github.com/MPowerKit/Popups</PackageProjectUrl>
 		<RepositoryUrl>https://github.com/MPowerKit/Popups</RepositoryUrl>
