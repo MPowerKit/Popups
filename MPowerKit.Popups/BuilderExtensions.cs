@@ -18,11 +18,20 @@ public static class BuilderExtensions
                     d.OnBackPressed(activity =>
                     {
                         var popupService = Application.Current.Handler.MauiContext.Services.GetService<IPopupService>();
-                        if (popupService is null) return false;
 
-                        if (PopupService.PopupStack.Count == 0) return false;
+                        if (popupService is null || PopupService.PopupStack.Count == 0) return false;
 
-                        return PopupService.PopupStack[^1].SendBackButtonPressed();
+                        try
+                        {
+                            if (PopupService.PopupStack[^1].SendBackButtonPressed()) return true;
+
+                            popupService.HidePopupAsync(PopupService.PopupStack[^1], true);
+                            return true;
+                        }
+                        catch (Exception ex)
+                        {
+                            return false;
+                        }
                     });
                 });
             });

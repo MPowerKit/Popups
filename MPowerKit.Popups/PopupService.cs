@@ -41,10 +41,13 @@ public partial class PopupService : IPopupService
 
         page.Parent = attachToWindow;
 
-        page.RequestClose += async (s, e) =>
+        page.BackgroundClicked += async (s, e) =>
         {
+            if (!page.CloseOnBackgroundClick) return;
+
             try
             {
+                if (e.Handled) return;
                 await HidePopupAsync(page, animated);
             }
             catch { }

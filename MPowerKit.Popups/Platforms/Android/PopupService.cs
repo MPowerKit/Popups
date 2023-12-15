@@ -1,7 +1,4 @@
-﻿using Android.Content;
-using Android.Views.InputMethods;
-
-using Microsoft.Maui.Platform;
+﻿using Microsoft.Maui.Platform;
 
 namespace MPowerKit.Popups;
 
@@ -87,8 +84,6 @@ public partial class PopupService
 
             if (e.Event.Action is Android.Views.MotionEventActions.Down)
             {
-                var imm = (InputMethodManager)view.Context.GetSystemService(Context.InputMethodService);
-
                 if (!page.BackgroundInputTransparent && keyboardVisible)
                 {
                     view.Context.HideKeyboard(view);

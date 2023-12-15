@@ -23,10 +23,14 @@ public static class AnimationHelper
     }
 }
 
+public class RoutedEventArgs : EventArgs
+{
+    public bool Handled { get; set; }
+}
+
 public class PopupPage : ContentPage
 {
-    public event EventHandler? BackgroundClicked;
-    public event EventHandler? RequestClose;
+    public event EventHandler<RoutedEventArgs>? BackgroundClicked;
 
     public PopupPage()
     {
@@ -35,8 +39,7 @@ public class PopupPage : ContentPage
 
     protected override bool OnBackButtonPressed()
     {
-        RequestClose?.Invoke(this, EventArgs.Empty);
-        return true;
+        return false;
     }
 
     internal void PreparingAnimation()
@@ -117,23 +120,21 @@ public class PopupPage : ContentPage
         return Task.CompletedTask;
     }
 
-    protected virtual bool HandleBackgroundClick()
+    public virtual void OnBackgroundCliked()
     {
-        return !CloseOnBackgroundClick;
+
     }
 
     public virtual void SendBackgroundClick()
     {
-        BackgroundClicked?.Invoke(this, EventArgs.Empty);
+        OnBackgroundCliked();
+
+        BackgroundClicked?.Invoke(this, new RoutedEventArgs());
 
         if (BackgroundClickedCommand?.CanExecute(BackgroundClickedCommandParameter) is true)
         {
             BackgroundClickedCommand.Execute(BackgroundClickedCommandParameter);
         }
-
-        if (HandleBackgroundClick()) return;
-
-        RequestClose?.Invoke(this, EventArgs.Empty);
     }
 
     #region IsAnimationEnabled
