@@ -1,4 +1,10 @@
-﻿using Microsoft.Maui.Platform;
+﻿using Android.Content;
+using Android.Widget;
+
+using Microsoft.Maui.Platform;
+
+using View = Android.Views.View;
+using ViewGroup = Android.Views.ViewGroup;
 
 namespace MPowerKit.Popups;
 
@@ -10,7 +16,7 @@ public partial class PopupService
 
         var activity = (parentWindow.Handler.PlatformView as Android.App.Activity);
 
-        var dv = activity?.Window?.DecorView as Android.Views.ViewGroup
+        var dv = activity?.Window?.DecorView as ViewGroup
             ?? throw new InvalidOperationException("DecorView of Activity not found");
 
         var handler = pageHandler as IPlatformViewHandler;
@@ -57,7 +63,7 @@ public partial class PopupService
 
         handler.PlatformView.Touch += (s, e) =>
         {
-            var view = s as Android.Views.ViewGroup;
+            var view = s as ViewGroup;
 
             if (page.Content is not null && view.ChildCount > 0)
             {
@@ -98,7 +104,13 @@ public partial class PopupService
             e.Handled = !page.BackgroundInputTransparent;
         };
 
-        dv.AddView(handler.PlatformView);
+        if (page.HasSystemPadding)
+        {
+            var pl = new ParentLayout(dv.Context, dv, page);
+
+            dv.AddView(pl);
+        }
+        else dv.AddView(handler.PlatformView);
     }
 
     protected virtual partial void DetachFromWindow(PopupPage page, IViewHandler pageHandler, Window parentWindow)
@@ -107,11 +119,15 @@ public partial class PopupService
 
         HandleAccessibility(false, page.DisableAndroidAccessibilityHandling, parentWindow);
 
-        handler.PlatformView.RemoveFromParent();
+        if (page.HasSystemPadding)
+        {
+            (handler.PlatformView.Parent as ParentLayout).RemoveFromParent();
+        }
+        else handler.PlatformView.RemoveFromParent();
     }
 
     //! important keeps reference to pages that accessibility has applied to. This is so accessibility can be removed properly when popup is removed. #https://github.com/LuckyDucko/Mopups/issues/93
-    private readonly List<Android.Views.View?> _accessibilityViews = [];
+    private readonly List<View?> _accessibilityViews = [];
     void HandleAccessibility(bool showPopup, bool disableAccessibilityHandling, Window window)
     {
         if (disableAccessibilityHandling) return;
@@ -121,11 +137,11 @@ public partial class PopupService
             var mainPage = window.Page;
             if (mainPage is null) return;
 
-            _accessibilityViews.Add(mainPage.Handler?.PlatformView as Android.Views.View);
+            _accessibilityViews.Add(mainPage.Handler?.PlatformView as View);
 
             if (mainPage.Navigation.NavigationStack.Count > 0)
             {
-                _accessibilityViews.Add(mainPage.Navigation?.NavigationStack[^1]?.Handler?.PlatformView as Android.Views.View);
+                _accessibilityViews.Add(mainPage.Navigation?.NavigationStack[^1]?.Handler?.PlatformView as View);
             }
 
             if (mainPage.Navigation.ModalStack.Count > 0)
@@ -144,10 +160,132 @@ public partial class PopupService
                 : Android.Views.ImportantForAccessibility.Auto;
 
             // Keyboard navigation
-            ((Android.Views.ViewGroup)view).DescendantFocusability = showPopup
+            ((ViewGroup)view).DescendantFocusability = showPopup
                 ? Android.Views.DescendantFocusability.BlockDescendants
                 : Android.Views.DescendantFocusability.AfterDescendants;
             view.ClearFocus();
+        }
+    }
+
+    public class ParentLayout : RelativeLayout
+    {
+        private readonly ViewGroup _decorView;
+        private readonly PopupPage _page;
+        private ViewGroup? _platformView;
+        private View _top;
+        private View _bottom;
+        private View _left;
+        private View _right;
+
+        public ParentLayout(Context context, ViewGroup decorView, PopupPage page) : base(context)
+        {
+            _decorView = decorView;
+            _page = page;
+            _platformView = page.Handler.PlatformView as ViewGroup;
+            InitContent();
+
+            page.PropertyChanged += Page_PropertyChanged;
+
+            decorView.ViewTreeObserver.GlobalLayout += OnGlobalLayout;
+        }
+
+        private void InitContent()
+        {
+            _top = new View(Context) { Id = View.GenerateViewId() };
+            _bottom = new View(Context) { Id = View.GenerateViewId() };
+            _left = new View(Context) { Id = View.GenerateViewId() };
+            _right = new View(Context) { Id = View.GenerateViewId() };
+            this.AddView(_top);
+            this.AddView(_bottom);
+            this.AddView(_left);
+            this.AddView(_right);
+            this.AddView(_platformView);
+
+            var color = _page.BackgroundColor.ToPlatform();
+
+            _top.SetBackgroundColor(color);
+            _bottom.SetBackgroundColor(color);
+            _left.SetBackgroundColor(color);
+            _right.SetBackgroundColor(color);
+
+            var alpha = (float)_page.Opacity;
+
+            _top.Alpha = alpha;
+            _bottom.Alpha = alpha;
+            _left.Alpha = alpha;
+            _right.Alpha = alpha;
+
+            var insets = _decorView.RootWindowInsets.StableInsets;
+
+            var topParams = new LayoutParams(ViewGroup.LayoutParams.MatchParent, insets.Top);
+            topParams.AddRule(LayoutRules.AlignParentTop);
+            _top.LayoutParameters = topParams;
+
+            var bottomParams = new LayoutParams(ViewGroup.LayoutParams.MatchParent, insets.Bottom);
+            bottomParams.AddRule(LayoutRules.AlignParentBottom);
+            _bottom.LayoutParameters = bottomParams;
+
+            var leftParams = new LayoutParams(insets.Left, ViewGroup.LayoutParams.MatchParent);
+            leftParams.AddRule(LayoutRules.AlignParentLeft);
+            leftParams.AddRule(LayoutRules.Below, _top.Id);
+            leftParams.AddRule(LayoutRules.Above, _bottom.Id);
+            _left.LayoutParameters = leftParams;
+
+            var rightParams = new LayoutParams(insets.Right, ViewGroup.LayoutParams.MatchParent);
+            rightParams.AddRule(LayoutRules.AlignParentRight);
+            rightParams.AddRule(LayoutRules.Below, _top.Id);
+            rightParams.AddRule(LayoutRules.Above, _bottom.Id);
+            _right.LayoutParameters = rightParams;
+
+            var centerParams = new LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.MatchParent);
+            centerParams.AddRule(LayoutRules.RightOf, _left.Id);
+            centerParams.AddRule(LayoutRules.LeftOf, _right.Id);
+            centerParams.AddRule(LayoutRules.Below, _top.Id);
+            centerParams.AddRule(LayoutRules.Above, _bottom.Id);
+            _platformView.LayoutParameters = centerParams;
+        }
+
+        private void Page_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == Page.BackgroundColorProperty.PropertyName)
+            {
+                var color = _page.BackgroundColor.ToPlatform();
+
+                _top.SetBackgroundColor(color);
+                _bottom.SetBackgroundColor(color);
+                _left.SetBackgroundColor(color);
+                _right.SetBackgroundColor(color);
+            }
+            else if (e.PropertyName == Page.OpacityProperty.PropertyName)
+            {
+                var alpha = (float)_page.Opacity;
+
+                _top.Alpha = alpha;
+                _bottom.Alpha = alpha;
+                _left.Alpha = alpha;
+                _right.Alpha = alpha;
+            }
+        }
+
+        public void OnGlobalLayout(object? sender, EventArgs args)
+        {
+            var insets = _decorView.RootWindowInsets.StableInsets;
+
+            var topParams = _top.LayoutParameters;
+            topParams.Height = insets.Top;
+            _top.LayoutParameters = topParams;
+
+            var bottomParams = _bottom.LayoutParameters;
+            bottomParams.Height = insets.Bottom;
+            _bottom.LayoutParameters = bottomParams;
+
+            var leftParams = _left.LayoutParameters;
+            leftParams.Width = insets.Left;
+            _left.LayoutParameters = leftParams;
+
+            var rightParams = _right.LayoutParameters;
+            rightParams.Width = insets.Right;
+            _right.LayoutParameters = rightParams;
         }
     }
 }

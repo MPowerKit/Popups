@@ -1,4 +1,5 @@
-﻿using System.Windows.Input;
+﻿using System.Runtime.CompilerServices;
+using System.Windows.Input;
 
 using MPowerKit.Popups.Animations;
 using MPowerKit.Popups.Interfaces;
@@ -35,6 +36,18 @@ public class PopupPage : ContentPage
     public PopupPage()
     {
         BackgroundColor = Color.FromArgb("#50000000");
+
+        Microsoft.Maui.Controls.PlatformConfiguration.iOSSpecific.Page.SetUseSafeArea(this, HasSystemPadding);
+    }
+
+    protected override void OnPropertyChanged([CallerMemberName] string propertyName = null)
+    {
+        base.OnPropertyChanged(propertyName);
+
+        if (propertyName == HasSystemPaddingProperty.PropertyName)
+        {
+            Microsoft.Maui.Controls.PlatformConfiguration.iOSSpecific.Page.SetUseSafeArea(this, HasSystemPadding);
+        }
     }
 
     protected override bool OnBackButtonPressed()

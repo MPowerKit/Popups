@@ -25,6 +25,6 @@ public partial class MainPage
         else
             CounterBtn.Text = $"Clicked {count} times";
 
-        PopupService.ShowPopupAsync(new PopupTestPage() { CloseOnBackgroundClick = true, BackgroundInputTransparent = false });
+        PopupService.ShowPopupAsync(new PopupTestPage());
     }
 }

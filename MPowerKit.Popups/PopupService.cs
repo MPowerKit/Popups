@@ -10,7 +10,8 @@ public partial class PopupService : IPopupService
 
     public static IPopupService Current => _instance ??= new PopupService();
 
-    public static List<PopupPage> PopupStack { get; } = [];
+    protected List<PopupPage> InternalPopupStack { get; } = [];
+    public IReadOnlyList<PopupPage> PopupStack => InternalPopupStack;
 
     public virtual Task ShowPopupAsync(PopupPage page, bool animated = true)
     {
@@ -61,7 +62,7 @@ public partial class PopupService : IPopupService
         AttachToWindow(page, pageHandler, attachToWindow!);
         page.SendAppearing();
 
-        PopupStack.Add(page);
+        InternalPopupStack.Add(page);
 
         if (animated)
         {
@@ -108,7 +109,7 @@ public partial class PopupService : IPopupService
         DetachFromWindow(page, page.Handler, parentWindow);
 
         page.Parent = null;
-        PopupStack.Remove(page);
+        InternalPopupStack.Remove(page);
 
         if (animated)
         {
