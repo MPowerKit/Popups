@@ -6,6 +6,6 @@ public interface IPopupAnimation
     public TimeSpan DurationOut { get; set; }
     void Preparing(View content, PopupPage page);
     void Disposing(View content, PopupPage page);
-    ValueTask Appearing(View content, PopupPage page);
-    ValueTask Disappearing(View content, PopupPage page);
+    Task Appearing(View content, PopupPage page);
+    Task Disappearing(View content, PopupPage page);
 }

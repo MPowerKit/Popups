@@ -24,9 +24,9 @@ public class FadeBackgroundAnimation : BaseAnimation
         page.BackgroundColor = _backgroundColor;
     }
 
-    public override async ValueTask Appearing(View content, PopupPage page)
+    public override Task Appearing(View content, PopupPage page)
     {
-        if (!HasBackgroundAnimation || _backgroundColor is null) return;
+        if (!HasBackgroundAnimation || _backgroundColor is null) return Task.CompletedTask;
 
         var tcs = new TaskCompletionSource();
 
@@ -40,12 +40,12 @@ public class FadeBackgroundAnimation : BaseAnimation
                 tcs.SetResult();
             });
 
-        await tcs.Task;
+        return tcs.Task;
     }
 
-    public override async ValueTask Disappearing(View content, PopupPage page)
+    public override Task Disappearing(View content, PopupPage page)
     {
-        if (!HasBackgroundAnimation || page.BackgroundColor is null) return;
+        if (!HasBackgroundAnimation || page.BackgroundColor is null) return Task.CompletedTask;
 
         var tcs = new TaskCompletionSource();
 
@@ -61,7 +61,7 @@ public class FadeBackgroundAnimation : BaseAnimation
                 tcs.SetResult();
             });
 
-        await tcs.Task;
+        return tcs.Task;
     }
 
     private Color? GetColor(float transparent)

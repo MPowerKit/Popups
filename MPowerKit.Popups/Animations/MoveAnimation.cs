@@ -39,7 +39,7 @@ public class MoveAnimation : FadeBackgroundAnimation
         content.TranslationY = _defaultTranslationY;
     }
 
-    public override async ValueTask Appearing(View content, PopupPage page)
+    public override Task Appearing(View content, PopupPage page)
     {
         List<Task> taskList = [base.Appearing(content, page)];
 
@@ -69,10 +69,10 @@ public class MoveAnimation : FadeBackgroundAnimation
             taskList.Add(content.TranslateTo(_defaultTranslationX, _defaultTranslationY, (uint)DurationIn.TotalMilliseconds, EasingIn));
         }
 
-        await Task.WhenAll(taskList);
+        return Task.WhenAll(taskList);
     }
 
-    public override async ValueTask Disappearing(View content, PopupPage page)
+    public override Task Disappearing(View content, PopupPage page)
     {
         List<Task> taskList = [base.Disappearing(content, page)];
 
@@ -107,7 +107,7 @@ public class MoveAnimation : FadeBackgroundAnimation
             taskList.Add(content.TranslateTo(translationX, translationY, (uint)DurationOut.TotalMilliseconds, EasingOut));
         }
 
-        await Task.WhenAll(taskList);
+        return Task.WhenAll(taskList);
     }
 
     private void UpdateDefaultTranslations(View content)

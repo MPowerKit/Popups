@@ -45,7 +45,7 @@ public class ScaleAnimation : FadeAnimation
         content.TranslationY = _defaultTranslationY;
     }
 
-    public override async ValueTask Appearing(View content, PopupPage page)
+    public override Task Appearing(View content, PopupPage page)
     {
         List<Task> taskList = [base.Appearing(content, page)];
 
@@ -80,10 +80,10 @@ public class ScaleAnimation : FadeAnimation
             }
         }
 
-        await Task.WhenAll(taskList);
+        return Task.WhenAll(taskList);
     }
 
-    public override async ValueTask Disappearing(View content, PopupPage page)
+    public override Task Disappearing(View content, PopupPage page)
     {
         List<Task> taskList = [base.Disappearing(content, page)];
 
@@ -120,7 +120,7 @@ public class ScaleAnimation : FadeAnimation
             taskList.Add(content.TranslateTo(translationX, translationY, (uint)DurationOut.TotalMilliseconds, EasingOut));
         }
 
-        await Task.WhenAll(taskList);
+        return Task.WhenAll(taskList);
     }
 
     private Task Scale(View content, Easing easing, double start, double end, bool isAppearing)
