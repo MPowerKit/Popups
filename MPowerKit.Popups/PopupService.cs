@@ -13,7 +13,7 @@ public partial class PopupService : IPopupService
     protected List<PopupPage> InternalPopupStack { get; } = [];
     public IReadOnlyList<PopupPage> PopupStack => InternalPopupStack;
 
-    public virtual Task ShowPopupAsync(PopupPage page, bool animated = true)
+    public virtual ValueTask ShowPopupAsync(PopupPage page, bool animated = true)
     {
         if (PopupStack.Contains(page))
         {
@@ -25,7 +25,7 @@ public partial class PopupService : IPopupService
         return ShowPopupAsync(page, window, animated);
     }
 
-    public virtual async Task ShowPopupAsync(PopupPage page, Window? attachToWindow, bool animated = true)
+    public virtual async ValueTask ShowPopupAsync(PopupPage page, Window? attachToWindow, bool animated = true)
     {
         if (PopupStack.Contains(page))
         {
@@ -70,7 +70,7 @@ public partial class PopupService : IPopupService
         }
     }
 
-    public virtual Task HidePopupAsync(bool animated = true)
+    public virtual ValueTask HidePopupAsync(bool animated = true)
     {
         if (PopupStack.Count == 0)
         {
@@ -82,12 +82,12 @@ public partial class PopupService : IPopupService
         return HidePopupAsync(page, animated);
     }
 
-    public virtual Task HidePopupAsync(PopupPage page, bool animated = true)
+    public virtual ValueTask HidePopupAsync(PopupPage page, bool animated = true)
     {
         return HidePopupAsync(page, page.Window, animated);
     }
 
-    protected virtual async Task HidePopupAsync(PopupPage page, Window parentWindow, bool animated = true)
+    protected virtual async ValueTask HidePopupAsync(PopupPage page, Window parentWindow, bool animated = true)
     {
         if (!PopupStack.Contains(page))
         {

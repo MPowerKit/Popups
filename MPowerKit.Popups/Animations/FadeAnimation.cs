@@ -47,7 +47,7 @@ public class FadeAnimation : BaseAnimation
         }
     }
 
-    public override Task Appearing(View content, PopupPage page)
+    public override async ValueTask Appearing(View content, PopupPage page)
     {
         if (double.IsNaN(_defaultOpacity)) _defaultOpacity = 1;
 
@@ -71,17 +71,15 @@ public class FadeAnimation : BaseAnimation
 #endif
             tasks.Add(page.FadeTo(_defaultOpacity, (uint)DurationIn.TotalMilliseconds, EasingIn));
 
-            return Task.WhenAll(tasks);
+            await Task.WhenAll(tasks);
         }
         if (content is not null)
         {
-            return content.FadeTo(_defaultOpacity, (uint)DurationIn.TotalMilliseconds, EasingIn);
+            await content.FadeTo(_defaultOpacity, (uint)DurationIn.TotalMilliseconds, EasingIn);
         }
-
-        return Task.CompletedTask;
     }
 
-    public override Task Disappearing(View content, PopupPage page)
+    public override async ValueTask Disappearing(View content, PopupPage page)
     {
         if (HasBackgroundAnimation)
         {
@@ -105,14 +103,12 @@ public class FadeAnimation : BaseAnimation
 #endif
             tasks.Add(page.FadeTo(0, (uint)DurationOut.TotalMilliseconds, EasingOut));
 
-            return Task.WhenAll(tasks);
+            await Task.WhenAll(tasks);
         }
         if (content is not null)
         {
-            return content.FadeTo(0, (uint)DurationOut.TotalMilliseconds, EasingOut);
+            await content.FadeTo(0, (uint)DurationOut.TotalMilliseconds, EasingOut);
         }
-
-        return Task.CompletedTask;
     }
 
 #if IOS || MACCATALYST

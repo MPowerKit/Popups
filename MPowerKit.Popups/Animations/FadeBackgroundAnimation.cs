@@ -24,7 +24,7 @@ public class FadeBackgroundAnimation : BaseAnimation
         page.BackgroundColor = _backgroundColor;
     }
 
-    public override async Task Appearing(View content, PopupPage page)
+    public override async ValueTask Appearing(View content, PopupPage page)
     {
         if (!HasBackgroundAnimation || _backgroundColor is null) return;
 
@@ -43,7 +43,7 @@ public class FadeBackgroundAnimation : BaseAnimation
         await tcs.Task;
     }
 
-    public override async Task Disappearing(View content, PopupPage page)
+    public override async ValueTask Disappearing(View content, PopupPage page)
     {
         if (!HasBackgroundAnimation || page.BackgroundColor is null) return;
 

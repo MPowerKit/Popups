@@ -41,9 +41,9 @@ public abstract class BaseAnimation : IPopupAnimation
 
     public abstract void Disposing(View content, PopupPage page);
 
-    public abstract Task Appearing(View content, PopupPage page);
+    public abstract ValueTask Appearing(View content, PopupPage page);
 
-    public abstract Task Disappearing(View content, PopupPage page);
+    public abstract ValueTask Disappearing(View content, PopupPage page);
 
     protected virtual double GetTopOffset(View content, Page page)
     {
