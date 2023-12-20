@@ -12,7 +12,9 @@ Inspired by [Rg.Plugins.Popup](https://github.com/rotorgames/Rg.Plugins.Popup) a
 
 - Changed API of PopupService, now you have an ability to choose a window to show/hide popup on.
 
-- Under the hood platform specific code does not use custom renderers for ```PopupPage```. 
+- Under the hood platform specific code does not use custom renderers for ```PopupPage```.
+
+- Hiding keyboard when tapping anywhere on popup except entry field
 
 - ```PopupStack``` is not static from now.
 
