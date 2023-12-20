@@ -19,13 +19,13 @@ public static class BuilderExtensions
                     {
                         var popupService = Application.Current.Handler.MauiContext.Services.GetService<IPopupService>();
 
-                        if (popupService is null || PopupService.Current.PopupStack.Count == 0) return false;
+                        if (popupService is null || popupService.PopupStack.Count == 0) return false;
 
                         try
                         {
-                            if (PopupService.Current.PopupStack[^1].SendBackButtonPressed()) return true;
+                            if (popupService.PopupStack[^1].SendBackButtonPressed()) return true;
 
-                            popupService.HidePopupAsync(PopupService.Current.PopupStack[^1], true);
+                            popupService.HidePopupAsync(popupService.PopupStack[^1], true);
                             return true;
                         }
                         catch (Exception ex)
