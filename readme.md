@@ -6,11 +6,11 @@
 
 Inspired by [Rg.Plugins.Popup](https://github.com/rotorgames/Rg.Plugins.Popup) and [Mopups](https://github.com/LuckyDucko/Mopups), but implementation is completely different. 
 
-- It has almost the same PopupPage API as packages above, but improved animations, removed redundant properies as KeyboardOffset, changed names of some properties. 
+- It has almost the same PopupPage API as packages above, but improved animations, removed redundant properies as ```KeyboardOffset```, changed names of some properties. 
 
 - Improved code and fixed some known bugs, eg Android window insets (system padding) or animation flickering. 
 
-- Changed API of PopupService, now you have an ability to choose a window to show/hide popup on.
+- Changed API of ```PopupService```, now you have an ability to choose a window to show/hide popup on.
 
 - Under the hood platform specific code does not use custom renderers for ```PopupPage```.
 
