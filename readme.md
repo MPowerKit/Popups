@@ -23,7 +23,7 @@ Inspired by [Rg.Plugins.Popup](https://github.com/rotorgames/Rg.Plugins.Popup) a
 ## Supported Platforms
 
 * .NET8
-* .NET8 for Android (min 24)
+* .NET8 for Android (min 23)
 * .NET8 for iOS (min 13.0)
 * .NET8 for MacCatalyst (min 13.1)
 * .NET8 for Windows (min 10.0.17763.0)
