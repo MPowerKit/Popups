@@ -106,7 +106,7 @@ public partial class PopupService : IPopupService
         }
 
         page.SendDisappearing();
-        DetachFromWindow(page, page.Handler, parentWindow);
+        DetachFromWindow(page, page.Handler!, parentWindow);
 
         page.Parent = null;
         InternalPopupStack.Remove(page);

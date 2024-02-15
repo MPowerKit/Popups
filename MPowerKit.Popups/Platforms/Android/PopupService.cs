@@ -14,32 +14,32 @@ public partial class PopupService
     {
         HandleAccessibility(true, page.DisableAndroidAccessibilityHandling, parentWindow);
 
-        var activity = (parentWindow.Handler.PlatformView as Android.App.Activity);
+        var activity = parentWindow.Handler.PlatformView as Android.App.Activity;
 
         var dv = activity?.Window?.DecorView as ViewGroup
             ?? throw new InvalidOperationException("DecorView of Activity not found");
 
-        var handler = pageHandler as IPlatformViewHandler;
+        var handler = (pageHandler as IPlatformViewHandler)!;
 
-        handler.PlatformView.ViewAttachedToWindow += (s, e) =>
+        handler.PlatformView!.ViewAttachedToWindow += (s, e) =>
         {
-            dv.Context.HideKeyboard(dv);
+            dv.Context!.HideKeyboard(dv);
         };
 
         handler.PlatformView.ViewDetachedFromWindow += (s, e) =>
         {
-            dv.Context.HideKeyboard(dv);
+            dv.Context!.HideKeyboard(dv);
         };
 
         bool keyboardVisible = false;
 
-        handler.PlatformView.ViewTreeObserver.GlobalLayout += (s, e) =>
+        handler.PlatformView!.ViewTreeObserver!.GlobalLayout += (s, e) =>
         {
             var view = dv.FindViewById(Android.Resource.Id.Content);
 
             var r = new Android.Graphics.Rect();
-            view.GetWindowVisibleDisplayFrame(r);
-            int screenHeight = view.RootView.Height;
+            view!.GetWindowVisibleDisplayFrame(r);
+            int screenHeight = view.RootView!.Height;
 
             // r.bottom is the position above soft keypad or device button.
             // if keypad is shown, the r.bottom is smaller than that before.
@@ -63,13 +63,13 @@ public partial class PopupService
 
         handler.PlatformView.Touch += (s, e) =>
         {
-            var view = s as ViewGroup;
+            var view = (s as ViewGroup)!;
 
             if (page.Content is not null && view.ChildCount > 0)
             {
-                var child = view.GetChildAt(0);
+                var child = view.GetChildAt(0)!;
 
-                var rawx = e.Event.RawX;
+                var rawx = e.Event!.RawX;
                 var rawy = e.Event.RawY;
                 var childx = child.GetX();
                 var childy = child.GetY();
@@ -79,7 +79,7 @@ public partial class PopupService
                 {
                     if (keyboardVisible)
                     {
-                        view.Context.HideKeyboard(view);
+                        view.Context!.HideKeyboard(view);
                         view.FindFocus()?.ClearFocus();
                     }
 
@@ -88,11 +88,11 @@ public partial class PopupService
                 }
             }
 
-            if (e.Event.Action is Android.Views.MotionEventActions.Down)
+            if (e.Event!.Action is Android.Views.MotionEventActions.Down)
             {
                 if (!page.BackgroundInputTransparent && keyboardVisible)
                 {
-                    view.Context.HideKeyboard(view);
+                    view.Context!.HideKeyboard(view);
                     view.FindFocus()?.ClearFocus();
                     e.Handled = true;
                     return;
@@ -106,7 +106,7 @@ public partial class PopupService
 
         if (page.HasSystemPadding)
         {
-            var pl = new ParentLayout(dv.Context, dv, page);
+            var pl = new ParentLayout(dv.Context!, dv, page);
 
             dv.AddView(pl);
         }
@@ -115,15 +115,15 @@ public partial class PopupService
 
     protected virtual partial void DetachFromWindow(PopupPage page, IViewHandler pageHandler, Window parentWindow)
     {
-        var handler = pageHandler as IPlatformViewHandler;
+        var handler = (pageHandler as IPlatformViewHandler)!;
 
         HandleAccessibility(false, page.DisableAndroidAccessibilityHandling, parentWindow);
 
         if (page.HasSystemPadding)
         {
-            (handler.PlatformView.Parent as ParentLayout).RemoveFromParent();
+            (handler.PlatformView!.Parent as ParentLayout)!.RemoveFromParent();
         }
-        else handler.PlatformView.RemoveFromParent();
+        else handler.PlatformView!.RemoveFromParent();
     }
 
     //! important keeps reference to pages that accessibility has applied to. This is so accessibility can be removed properly when popup is removed. #https://github.com/LuckyDucko/Mopups/issues/93
@@ -144,7 +144,7 @@ public partial class PopupService
                 _accessibilityViews.Add(mainPage.Navigation?.NavigationStack[^1]?.Handler?.PlatformView as View);
             }
 
-            if (mainPage.Navigation.ModalStack.Count > 0)
+            if (mainPage.Navigation!.ModalStack.Count > 0)
             {
                 _accessibilityViews.Add(mainPage.Navigation?.ModalStack[^1]?.Handler?.PlatformView as Android.Views.View);
             }
@@ -171,7 +171,7 @@ public partial class PopupService
     {
         private readonly ViewGroup _decorView;
         private readonly PopupPage _page;
-        private ViewGroup? _platformView;
+        private readonly ViewGroup _platformView;
         private View _top;
         private View _bottom;
         private View _left;
@@ -181,12 +181,12 @@ public partial class PopupService
         {
             _decorView = decorView;
             _page = page;
-            _platformView = page.Handler.PlatformView as ViewGroup;
+            _platformView = (page.Handler!.PlatformView as ViewGroup)!;
             InitContent();
 
             page.PropertyChanged += Page_PropertyChanged;
 
-            decorView.ViewTreeObserver.GlobalLayout += OnGlobalLayout;
+            _decorView.ViewTreeObserver!.GlobalLayout += OnGlobalLayout;
         }
 
         private void InitContent()
@@ -215,7 +215,17 @@ public partial class PopupService
             _left.Alpha = alpha;
             _right.Alpha = alpha;
 
-            var insets = _decorView.RootWindowInsets.StableInsets;
+            Android.Graphics.Rect insets;
+            if (OperatingSystem.IsAndroidVersionAtLeast(30))
+            {
+                var ins = _decorView.RootWindowInsets!.GetInsetsIgnoringVisibility(Android.Views.WindowInsets.Type.SystemBars());
+                insets = new Android.Graphics.Rect(ins.Left, ins.Top, ins.Right, ins.Bottom);
+            }
+            else
+            {
+                var ins = _decorView.RootWindowInsets!;
+                insets = new Android.Graphics.Rect(ins.StableInsetLeft, ins.StableInsetTop, ins.StableInsetRight, ins.StableInsetBottom);
+            }
 
             var topParams = new LayoutParams(ViewGroup.LayoutParams.MatchParent, insets.Top);
             topParams.AddRule(LayoutRules.AlignParentTop);
@@ -269,21 +279,31 @@ public partial class PopupService
 
         public void OnGlobalLayout(object? sender, EventArgs args)
         {
-            var insets = _decorView.RootWindowInsets.StableInsets;
+            Android.Graphics.Rect insets;
+            if (OperatingSystem.IsAndroidVersionAtLeast(30))
+            {
+                var ins = _decorView.RootWindowInsets!.GetInsetsIgnoringVisibility(Android.Views.WindowInsets.Type.SystemBars());
+                insets = new Android.Graphics.Rect(ins.Left, ins.Top, ins.Right, ins.Bottom);
+            }
+            else
+            {
+                var ins = _decorView.RootWindowInsets!;
+                insets = new Android.Graphics.Rect(ins.StableInsetLeft, ins.StableInsetTop, ins.StableInsetRight, ins.StableInsetBottom);
+            }
 
-            var topParams = _top.LayoutParameters;
+            var topParams = _top.LayoutParameters!;
             topParams.Height = insets.Top;
             _top.LayoutParameters = topParams;
 
-            var bottomParams = _bottom.LayoutParameters;
+            var bottomParams = _bottom.LayoutParameters!;
             bottomParams.Height = insets.Bottom;
             _bottom.LayoutParameters = bottomParams;
 
-            var leftParams = _left.LayoutParameters;
+            var leftParams = _left.LayoutParameters!;
             leftParams.Width = insets.Left;
             _left.LayoutParameters = leftParams;
 
-            var rightParams = _right.LayoutParameters;
+            var rightParams = _right.LayoutParameters!;
             rightParams.Width = insets.Right;
             _right.LayoutParameters = rightParams;
         }
