@@ -121,7 +121,9 @@ public partial class PopupService
 
         if (page.HasSystemPadding)
         {
-            (handler.PlatformView!.Parent as ParentLayout)!.RemoveFromParent();
+            var layout = (handler.PlatformView!.Parent as ParentLayout)!;
+            layout.RemoveGlobalLayoutListener();
+            layout.RemoveFromParent();
         }
         else handler.PlatformView!.RemoveFromParent();
     }
@@ -167,7 +169,7 @@ public partial class PopupService
         }
     }
 
-    public class ParentLayout : RelativeLayout
+    public class ParentLayout : RelativeLayout, Android.Views.ViewTreeObserver.IOnGlobalLayoutListener
     {
         private readonly ViewGroup _decorView;
         private readonly PopupPage _page;
@@ -176,6 +178,7 @@ public partial class PopupService
         private View _bottom;
         private View _left;
         private View _right;
+        private Android.Graphics.Rect _prevInsets;
 
         public ParentLayout(Context context, ViewGroup decorView, PopupPage page) : base(context)
         {
@@ -186,7 +189,12 @@ public partial class PopupService
 
             page.PropertyChanged += Page_PropertyChanged;
 
-            _decorView.ViewTreeObserver!.GlobalLayout += OnGlobalLayout;
+            _decorView.ViewTreeObserver!.AddOnGlobalLayoutListener(this);
+        }
+
+        public void RemoveGlobalLayoutListener()
+        {
+            _decorView.ViewTreeObserver!.RemoveOnGlobalLayoutListener(this);
         }
 
         private void InitContent()
@@ -226,6 +234,8 @@ public partial class PopupService
                 var ins = _decorView.RootWindowInsets!;
                 insets = new Android.Graphics.Rect(ins.StableInsetLeft, ins.StableInsetTop, ins.StableInsetRight, ins.StableInsetBottom);
             }
+
+            _prevInsets = insets;
 
             var topParams = new LayoutParams(ViewGroup.LayoutParams.MatchParent, insets.Top);
             topParams.AddRule(LayoutRules.AlignParentTop);
@@ -277,7 +287,7 @@ public partial class PopupService
             }
         }
 
-        public void OnGlobalLayout(object? sender, EventArgs args)
+        public void OnGlobalLayout()
         {
             Android.Graphics.Rect insets;
             if (OperatingSystem.IsAndroidVersionAtLeast(30))
@@ -290,6 +300,11 @@ public partial class PopupService
                 var ins = _decorView.RootWindowInsets!;
                 insets = new Android.Graphics.Rect(ins.StableInsetLeft, ins.StableInsetTop, ins.StableInsetRight, ins.StableInsetBottom);
             }
+
+            if (_prevInsets.Top == insets.Top && _prevInsets.Bottom == insets.Bottom
+                && _prevInsets.Left == insets.Left && _prevInsets.Right == insets.Right) return;
+
+            _prevInsets = insets;
 
             var topParams = _top.LayoutParameters!;
             topParams.Height = insets.Top;
