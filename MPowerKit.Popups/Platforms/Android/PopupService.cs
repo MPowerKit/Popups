@@ -97,7 +97,10 @@ public partial class PopupService
                     e.Handled = true;
                     return;
                 }
+            }
 
+            if (e.Event!.Action is Android.Views.MotionEventActions.Up)
+            {
                 page.SendBackgroundClick();
             }
 
@@ -148,7 +151,7 @@ public partial class PopupService
 
             if (mainPage.Navigation!.ModalStack.Count > 0)
             {
-                _accessibilityViews.Add(mainPage.Navigation?.ModalStack[^1]?.Handler?.PlatformView as Android.Views.View);
+                _accessibilityViews.Add(mainPage.Navigation?.ModalStack[^1]?.Handler?.PlatformView as View);
             }
         }
 

@@ -40,7 +40,7 @@ public partial class PopupService : IPopupService
 
         var pageHandler = page.ToHandler(attachToWindow.Handler.MauiContext!);
 
-        page.Parent = attachToWindow;
+        attachToWindow.AddLogicalChild(page);
 
         page.BackgroundClicked += async (s, e) =>
         {
@@ -108,7 +108,7 @@ public partial class PopupService : IPopupService
         page.SendDisappearing();
         DetachFromWindow(page, page.Handler!, parentWindow);
 
-        page.Parent = null;
+        parentWindow.RemoveLogicalChild(page);
         InternalPopupStack.Remove(page);
 
         if (animated)

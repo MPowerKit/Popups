@@ -35,9 +35,32 @@ public class PopupPage : ContentPage
 
     public PopupPage()
     {
+        App_Dict_ValuesChanged(null, null);
+
+        var dict = Application.Current.Resources as Microsoft.Maui.Controls.Internals.IResourceDictionary;
+        dict.ValuesChanged += App_Dict_ValuesChanged;
+
         BackgroundColor = Color.FromArgb("#50000000");
 
         Microsoft.Maui.Controls.PlatformConfiguration.iOSSpecific.Page.SetUseSafeArea(this, HasSystemPadding);
+
+        this.Unloaded += PopupPage_Unloaded;
+    }
+
+    protected virtual void PopupPage_Unloaded(object? sender, EventArgs e)
+    {
+        var dict = Application.Current.Resources as Microsoft.Maui.Controls.Internals.IResourceDictionary;
+        dict.ValuesChanged -= App_Dict_ValuesChanged;
+    }
+
+    protected virtual void App_Dict_ValuesChanged(object? sender, Microsoft.Maui.Controls.Internals.ResourcesChangedEventArgs e)
+    {
+        foreach (var dictionary in Application.Current.Resources.MergedDictionaries)
+        {
+            if (this.Resources.MergedDictionaries.Contains(dictionary)) continue;
+
+            this.Resources.MergedDictionaries.Add(dictionary);
+        }
     }
 
     protected override void OnPropertyChanged([CallerMemberName] string propertyName = null)
