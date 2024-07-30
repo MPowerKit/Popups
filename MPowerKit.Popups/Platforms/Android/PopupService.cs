@@ -1,5 +1,4 @@
-﻿using Android.App;
-using Android.Content;
+﻿using Android.Content;
 
 using AndroidX.ConstraintLayout.Widget;
 
@@ -109,20 +108,17 @@ public partial class PopupService
             e.Handled = !page.BackgroundInputTransparent;
         };
 
-        AddToVisualTree(page, handler, activity!);
+        AddToVisualTree(page, handler, dv, 10000);
     }
 
-    protected virtual void AddToVisualTree(PopupPage page, IPlatformViewHandler handler, Activity activity)
+    protected virtual void AddToVisualTree(PopupPage page, IPlatformViewHandler handler, ViewGroup decorView, float elevation)
     {
-        var dv = activity?.Window?.DecorView as ViewGroup
-            ?? throw new InvalidOperationException("DecorView of Activity not found");
-
         var view = !page.HasSystemPadding
             ? handler.PlatformView!
-            : new ParentLayout(dv.Context!, dv, page);
-        view.Elevation = 10000;
+            : new ParentLayout(decorView.Context!, decorView, page);
+        view.Elevation = elevation;
 
-        dv.AddView(view);
+        decorView.AddView(view);
     }
 
     protected virtual partial void DetachFromWindow(PopupPage page, IViewHandler pageHandler, Window parentWindow)
