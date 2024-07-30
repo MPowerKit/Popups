@@ -9,6 +9,8 @@ namespace MPowerKit.Popups;
 
 public partial class PopupService
 {
+    protected static readonly List<UIWindow> PrevKeyWindows = [];
+
     protected readonly List<UIWindow> Windows = [];
 
     protected virtual partial void AttachToWindow(PopupPage page, IViewHandler pageHandler, Window parentWindow)
@@ -16,18 +18,7 @@ public partial class PopupService
         var window = parentWindow.Handler.PlatformView as UIWindow
             ?? throw new InvalidOperationException("Window not found");
 
-        var handler = pageHandler as PageHandler;
-
-        var connectedScene = UIApplication.SharedApplication.ConnectedScenes
-            .OfType<UIWindowScene>()
-            .FirstOrDefault(x => x.ActivationState == UISceneActivationState.ForegroundActive);
-        var popupWindow = connectedScene is not null
-            ? new PopupWindow(connectedScene)
-            : new PopupWindow();
-
-        Windows.Add(popupWindow);
-
-        popupWindow.RootViewController = handler.ViewController;
+        var handler = (pageHandler as IPlatformViewHandler)!;
 
         var gr = new UITapGestureRecognizer(e =>
         {
@@ -41,7 +32,25 @@ public partial class PopupService
         })
         { CancelsTouchesInView = false };
 
-        handler.ViewController.View.AddGestureRecognizer(gr);
+        handler.ViewController!.View!.AddGestureRecognizer(gr);
+
+        var prevKeyWindow = GetKeyWindow();
+
+        AddToVisualTree(handler);
+
+        StorePrevKeyWindow(prevKeyWindow);
+    }
+
+    protected virtual void AddToVisualTree(IPlatformViewHandler handler)
+    {
+        var connectedScene = GetActiveScene();
+        var popupWindow = connectedScene is not null
+            ? new PopupWindow(connectedScene)
+            : new PopupWindow();
+
+        Windows.Add(popupWindow);
+
+        popupWindow.RootViewController = handler.ViewController;
 
         popupWindow.MakeKeyAndVisible();
     }
@@ -51,24 +60,53 @@ public partial class PopupService
         var window = parentWindow.Handler.PlatformView as UIWindow
             ?? throw new InvalidOperationException("Window not found");
 
-        var handler = pageHandler as PageHandler;
+        var handler = (pageHandler as PageHandler)!;
 
-        var popupWindow = handler.ViewController.View.Window;
+        var view = handler.ViewController!.View!;
 
-        foreach (var gr in handler.ViewController.View.GestureRecognizers.ToList())
+        foreach (var gr in view.GestureRecognizers!.ToList())
         {
-            handler.ViewController.View.RemoveGestureRecognizer(gr);
+            view.RemoveGestureRecognizer(gr);
         }
 
-        popupWindow.RootViewController.DismissViewController(false, null);
+        RemoveFromVisualTree(handler);
+
+        (RestorePrevKeyWindow() ?? window).MakeKeyWindow();
+    }
+
+    protected virtual void RemoveFromVisualTree(IPlatformViewHandler handler)
+    {
+        var view = handler.ViewController!.View!;
+
+        var popupWindow = view.Window;
+
+        popupWindow.RootViewController!.DismissViewController(false, null);
         popupWindow.RootViewController.Dispose();
         popupWindow.Hidden = true;
         popupWindow.WindowScene = null;
         popupWindow.Dispose();
 
         Windows.Remove(popupWindow);
+    }
 
-        window.MakeKeyAndVisible();
+    protected virtual void StorePrevKeyWindow(UIWindow? window)
+    {
+        if (window is null) return;
+
+        PrevKeyWindows.Remove(window);
+
+        PrevKeyWindows.Add(window);
+    }
+
+    protected virtual UIWindow? RestorePrevKeyWindow()
+    {
+        if (PrevKeyWindows.Count == 0) return null;
+
+        var window = PrevKeyWindows[^1];
+
+        PrevKeyWindows.Remove(window);
+
+        return window;
     }
 
     public class PopupWindow : UIWindow
@@ -87,14 +125,14 @@ public partial class PopupService
 
         public override UIView? HitTest(CGPoint point, UIEvent? uievent)
         {
-            var viewcontroller = RootViewController as PageViewController;
-            var page = viewcontroller.CurrentView as PopupPage;
+            var viewcontroller = (RootViewController as PageViewController)!;
+            var page = (viewcontroller.CurrentView as PopupPage)!;
 
             var hitTestResult = base.HitTest(point, uievent);
 
-            if (uievent.Type != UIEventType.Hover && hitTestResult is not UITextField)
+            if (uievent?.Type is not UIEventType.Hover && hitTestResult is not UITextField)
             {
-                RootViewController.View.EndEditing(true);
+                viewcontroller.View!.EndEditing(true);
             }
 
             return hitTestResult == viewcontroller.CurrentPlatformView
@@ -102,5 +140,21 @@ public partial class PopupService
                 ? null
                 : hitTestResult;
         }
+    }
+
+    public static UIWindow? GetKeyWindow()
+    {
+        var window = GetActiveScene()?.Windows.FirstOrDefault(w => w.IsKeyWindow);
+
+        return window;
+    }
+
+    public static UIWindowScene? GetActiveScene()
+    {
+        var connectedScene = UIApplication.SharedApplication.ConnectedScenes
+            .OfType<UIWindowScene>()
+            .FirstOrDefault(x => x.ActivationState == UISceneActivationState.ForegroundActive);
+
+        return connectedScene;
     }
 }

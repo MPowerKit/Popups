@@ -1,5 +1,7 @@
-﻿using Android.Content;
-using Android.Widget;
+﻿using Android.App;
+using Android.Content;
+
+using AndroidX.ConstraintLayout.Widget;
 
 using Microsoft.Maui.Platform;
 
@@ -69,8 +71,8 @@ public partial class PopupService
             {
                 var child = view.GetChildAt(0)!;
 
-                var rawx = e.Event!.RawX;
-                var rawy = e.Event.RawY;
+                var rawx = e.Event.GetX();
+                var rawy = e.Event.GetY();
                 var childx = child.GetX();
                 var childy = child.GetY();
 
@@ -107,13 +109,20 @@ public partial class PopupService
             e.Handled = !page.BackgroundInputTransparent;
         };
 
-        if (page.HasSystemPadding)
-        {
-            var pl = new ParentLayout(dv.Context!, dv, page);
+        AddToVisualTree(page, handler, activity!);
+    }
 
-            dv.AddView(pl);
-        }
-        else dv.AddView(handler.PlatformView);
+    protected virtual void AddToVisualTree(PopupPage page, IPlatformViewHandler handler, Activity activity)
+    {
+        var dv = activity?.Window?.DecorView as ViewGroup
+            ?? throw new InvalidOperationException("DecorView of Activity not found");
+
+        var view = !page.HasSystemPadding
+            ? handler.PlatformView!
+            : new ParentLayout(dv.Context!, dv, page);
+        view.Elevation = 10000;
+
+        dv.AddView(view);
     }
 
     protected virtual partial void DetachFromWindow(PopupPage page, IViewHandler pageHandler, Window parentWindow)
@@ -122,6 +131,11 @@ public partial class PopupService
 
         HandleAccessibility(false, page.DisableAndroidAccessibilityHandling, parentWindow);
 
+        RemoveFromVisualTree(page, handler);
+    }
+
+    protected virtual void RemoveFromVisualTree(PopupPage page, IPlatformViewHandler handler)
+    {
         if (page.HasSystemPadding)
         {
             var layout = (handler.PlatformView!.Parent as ParentLayout)!;
@@ -132,8 +146,8 @@ public partial class PopupService
     }
 
     //! important keeps reference to pages that accessibility has applied to. This is so accessibility can be removed properly when popup is removed. #https://github.com/LuckyDucko/Mopups/issues/93
-    private readonly List<View?> _accessibilityViews = [];
-    void HandleAccessibility(bool showPopup, bool disableAccessibilityHandling, Window window)
+    protected List<View?> AccessibilityViews { get; } = [];
+    protected virtual void HandleAccessibility(bool showPopup, bool disableAccessibilityHandling, Window window)
     {
         if (disableAccessibilityHandling) return;
 
@@ -142,20 +156,20 @@ public partial class PopupService
             var mainPage = window.Page;
             if (mainPage is null) return;
 
-            _accessibilityViews.Add(mainPage.Handler?.PlatformView as View);
+            AccessibilityViews.Add(mainPage.Handler?.PlatformView as View);
 
             if (mainPage.Navigation.NavigationStack.Count > 0)
             {
-                _accessibilityViews.Add(mainPage.Navigation?.NavigationStack[^1]?.Handler?.PlatformView as View);
+                AccessibilityViews.Add(mainPage.Navigation?.NavigationStack[^1]?.Handler?.PlatformView as View);
             }
 
             if (mainPage.Navigation!.ModalStack.Count > 0)
             {
-                _accessibilityViews.Add(mainPage.Navigation?.ModalStack[^1]?.Handler?.PlatformView as View);
+                AccessibilityViews.Add(mainPage.Navigation?.ModalStack[^1]?.Handler?.PlatformView as View);
             }
         }
 
-        foreach (var view in _accessibilityViews)
+        foreach (var view in AccessibilityViews)
         {
             if (view is null) continue;
 
@@ -172,7 +186,7 @@ public partial class PopupService
         }
     }
 
-    public class ParentLayout : RelativeLayout, Android.Views.ViewTreeObserver.IOnGlobalLayoutListener
+    public class ParentLayout : ConstraintLayout, Android.Views.ViewTreeObserver.IOnGlobalLayoutListener
     {
         private readonly ViewGroup _decorView;
         private readonly PopupPage _page;
@@ -190,13 +204,14 @@ public partial class PopupService
             _platformView = (page.Handler!.PlatformView as ViewGroup)!;
             InitContent();
 
-            page.PropertyChanged += Page_PropertyChanged;
+            _page.PropertyChanged += Page_PropertyChanged;
 
             _decorView.ViewTreeObserver!.AddOnGlobalLayoutListener(this);
         }
 
         public void RemoveGlobalLayoutListener()
         {
+            _page.PropertyChanged -= Page_PropertyChanged;
             _decorView.ViewTreeObserver!.RemoveOnGlobalLayoutListener(this);
         }
 
@@ -206,11 +221,7 @@ public partial class PopupService
             _bottom = new View(Context) { Id = View.GenerateViewId() };
             _left = new View(Context) { Id = View.GenerateViewId() };
             _right = new View(Context) { Id = View.GenerateViewId() };
-            this.AddView(_top);
-            this.AddView(_bottom);
-            this.AddView(_left);
-            this.AddView(_right);
-            this.AddView(_platformView);
+            _platformView.Id = View.GenerateViewId();
 
             var color = _page.BackgroundColor.ToPlatform();
 
@@ -240,32 +251,48 @@ public partial class PopupService
 
             _prevInsets = insets;
 
-            var topParams = new LayoutParams(ViewGroup.LayoutParams.MatchParent, insets.Top);
-            topParams.AddRule(LayoutRules.AlignParentTop);
+            var topParams = new LayoutParams(LayoutParams.MatchParent, insets.Top);
             _top.LayoutParameters = topParams;
 
-            var bottomParams = new LayoutParams(ViewGroup.LayoutParams.MatchParent, insets.Bottom);
-            bottomParams.AddRule(LayoutRules.AlignParentBottom);
+            var bottomParams = new LayoutParams(LayoutParams.MatchParent, insets.Bottom);
             _bottom.LayoutParameters = bottomParams;
 
-            var leftParams = new LayoutParams(insets.Left, ViewGroup.LayoutParams.MatchParent);
-            leftParams.AddRule(LayoutRules.AlignParentLeft);
-            leftParams.AddRule(LayoutRules.Below, _top.Id);
-            leftParams.AddRule(LayoutRules.Above, _bottom.Id);
+            var leftParams = new LayoutParams(insets.Left, LayoutParams.MatchConstraint);
             _left.LayoutParameters = leftParams;
 
-            var rightParams = new LayoutParams(insets.Right, ViewGroup.LayoutParams.MatchParent);
-            rightParams.AddRule(LayoutRules.AlignParentRight);
-            rightParams.AddRule(LayoutRules.Below, _top.Id);
-            rightParams.AddRule(LayoutRules.Above, _bottom.Id);
+            var rightParams = new LayoutParams(insets.Right, LayoutParams.MatchConstraint);
             _right.LayoutParameters = rightParams;
 
-            var centerParams = new LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.MatchParent);
-            centerParams.AddRule(LayoutRules.RightOf, _left.Id);
-            centerParams.AddRule(LayoutRules.LeftOf, _right.Id);
-            centerParams.AddRule(LayoutRules.Below, _top.Id);
-            centerParams.AddRule(LayoutRules.Above, _bottom.Id);
+            var centerParams = new LayoutParams(LayoutParams.MatchConstraint, LayoutParams.MatchConstraint);
             _platformView.LayoutParameters = centerParams;
+
+            this.AddView(_top);
+            this.AddView(_bottom);
+            this.AddView(_left);
+            this.AddView(_right);
+            this.AddView(_platformView);
+
+            var set = new ConstraintSet();
+            set.Clone(this);
+
+            set.Connect(_top.Id, ConstraintSet.Top, ConstraintSet.ParentId, ConstraintSet.Top);
+
+            set.Connect(_bottom.Id, ConstraintSet.Bottom, ConstraintSet.ParentId, ConstraintSet.Bottom);
+
+            set.Connect(_left.Id, ConstraintSet.Left, ConstraintSet.ParentId, ConstraintSet.Left);
+            set.Connect(_left.Id, ConstraintSet.Top, _top.Id, ConstraintSet.Bottom);
+            set.Connect(_left.Id, ConstraintSet.Bottom, _bottom.Id, ConstraintSet.Top);
+
+            set.Connect(_right.Id, ConstraintSet.Right, ConstraintSet.ParentId, ConstraintSet.Right);
+            set.Connect(_right.Id, ConstraintSet.Top, _top.Id, ConstraintSet.Bottom);
+            set.Connect(_right.Id, ConstraintSet.Bottom, _bottom.Id, ConstraintSet.Top);
+
+            set.Connect(_platformView.Id, ConstraintSet.Left, _left.Id, ConstraintSet.Right);
+            set.Connect(_platformView.Id, ConstraintSet.Top, _top.Id, ConstraintSet.Bottom);
+            set.Connect(_platformView.Id, ConstraintSet.Bottom, _bottom.Id, ConstraintSet.Top);
+            set.Connect(_platformView.Id, ConstraintSet.Right, _right.Id, ConstraintSet.Left);
+
+            set.ApplyTo(this);
         }
 
         private void Page_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)

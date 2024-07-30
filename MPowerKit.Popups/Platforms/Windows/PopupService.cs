@@ -14,11 +14,11 @@ public partial class PopupService
         var content = uiWindow?.Content as Panel
             ?? throw new InvalidOperationException("Window not found");
 
-        var handler = pageHandler as IPlatformViewHandler;
+        var handler = (pageHandler as IPlatformViewHandler)!;
 
-        var inputPane = InputPaneInterop.GetForWindow(uiWindow.WindowHandle);
+        var inputPane = InputPaneInterop.GetForWindow(uiWindow!.WindowHandle);
 
-        handler.PlatformView.PointerPressed += (s, e) =>
+        handler.PlatformView!.PointerPressed += (s, e) =>
         {
             if (inputPane.Visible)
             {
@@ -28,7 +28,7 @@ public partial class PopupService
                 return;
             }
 
-            if (e.OriginalSource != handler.PlatformView)
+            if ((e.OriginalSource as Microsoft.UI.Xaml.FrameworkElement) != handler.PlatformView)
             {
                 e.Handled = true;
                 return;
@@ -44,8 +44,8 @@ public partial class PopupService
 
     protected virtual partial void DetachFromWindow(PopupPage page, IViewHandler pageHandler, Window parentWindow)
     {
-        var handler = pageHandler as IPlatformViewHandler;
+        var handler = (pageHandler as IPlatformViewHandler)!;
 
-        (handler.PlatformView.Parent as Panel)?.Children.Remove(handler.PlatformView);
+        (handler.PlatformView!.Parent as Panel)?.Children.Remove(handler.PlatformView);
     }
 }
