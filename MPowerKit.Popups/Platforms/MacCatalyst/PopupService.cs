@@ -44,9 +44,9 @@ public partial class PopupService
     protected virtual void AddToVisualTree(IPlatformViewHandler handler)
     {
         var connectedScene = GetActiveScene();
-        var popupWindow = connectedScene is not null
-            ? new PopupWindow(connectedScene)
-            : new PopupWindow();
+        PopupWindow popupWindow = connectedScene is not null
+            ? new(connectedScene)
+            : new();
 
         Windows.Add(popupWindow);
 

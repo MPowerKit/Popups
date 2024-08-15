@@ -70,7 +70,7 @@ public partial class PopupService
             {
                 var child = view.GetChildAt(0)!;
 
-                var rawx = e.Event.GetX();
+                var rawx = e.Event!.GetX();
                 var rawy = e.Event.GetY();
                 var childx = child.GetX();
                 var childy = child.GetY();
@@ -198,6 +198,7 @@ public partial class PopupService
             _decorView = decorView;
             _page = page;
             _platformView = (page.Handler!.PlatformView as ViewGroup)!;
+
             InitContent();
 
             _page.PropertyChanged += Page_PropertyChanged;
@@ -261,6 +262,11 @@ public partial class PopupService
 
             var centerParams = new LayoutParams(LayoutParams.MatchConstraint, LayoutParams.MatchConstraint);
             _platformView.LayoutParameters = centerParams;
+
+            ToggleViewVisiblility(_top, insets.Top);
+            ToggleViewVisiblility(_right, insets.Right);
+            ToggleViewVisiblility(_bottom, insets.Bottom);
+            ToggleViewVisiblility(_left, insets.Left);
 
             this.AddView(_top);
             this.AddView(_bottom);
@@ -347,6 +353,16 @@ public partial class PopupService
             var rightParams = _right.LayoutParameters!;
             rightParams.Width = insets.Right;
             _right.LayoutParameters = rightParams;
+
+            ToggleViewVisiblility(_top, insets.Top);
+            ToggleViewVisiblility(_right, insets.Right);
+            ToggleViewVisiblility(_bottom, insets.Bottom);
+            ToggleViewVisiblility(_left, insets.Left);
+        }
+
+        private void ToggleViewVisiblility(View view, int size)
+        {
+            view.Visibility = size > 0 ? Android.Views.ViewStates.Visible : Android.Views.ViewStates.Gone;
         }
     }
 }
