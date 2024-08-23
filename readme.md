@@ -4,7 +4,7 @@
 
 [![NuGet](https://img.shields.io/nuget/v/MPowerKit.Popups.svg?maxAge=2592000)](https://www.nuget.org/packages/MPowerKit.Popups)
 
-[!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/dimonovdd)
+[!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/alexdobrynin)
 
 Inspired by [Rg.Plugins.Popup](https://github.com/rotorgames/Rg.Plugins.Popup) and [Mopups](https://github.com/LuckyDucko/Mopups), but implementation is completely different. 
 
