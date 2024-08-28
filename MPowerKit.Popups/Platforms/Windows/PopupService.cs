@@ -49,24 +49,31 @@ public partial class PopupService
         if (page.BackgroundInputTransparent)
         {
             platform.Margin = new Microsoft.UI.Xaml.Thickness(
-                page.Content.Margin.Left,
-                page.Content.Margin.Top,
-                page.Content.Margin.Right,
-                page.Content.Margin.Bottom);
+               page.Content.Margin.Left,
+               page.Content.Margin.Top,
+               page.Content.Margin.Right,
+               page.Content.Margin.Bottom);
             page.Content.Margin = new Thickness(0);
 
-            var measured = (page.Content as IView).Measure(double.PositiveInfinity, double.PositiveInfinity);
+            PageContentSizeChanged(page, EventArgs.Empty);
 
-            platform.HorizontalAlignment = page.Content.HorizontalOptions.ToPlatformHorizontal();
-            platform.VerticalAlignment = page.Content.VerticalOptions.ToPlatformVertical();
+            page.Content.SizeChanged += PageContentSizeChanged;
 
-            if (platform.HorizontalAlignment is not Microsoft.UI.Xaml.HorizontalAlignment.Stretch)
+            void PageContentSizeChanged(object? sender, EventArgs args)
             {
-                platform.Width = measured.Width;
-            }
-            if (platform.VerticalAlignment is not Microsoft.UI.Xaml.VerticalAlignment.Stretch)
-            {
-                platform.Height = measured.Height;
+                var measured = (page.Content as IView).Measure(double.PositiveInfinity, double.PositiveInfinity);
+
+                platform.HorizontalAlignment = page.Content.HorizontalOptions.ToPlatformHorizontal();
+                platform.VerticalAlignment = page.Content.VerticalOptions.ToPlatformVertical();
+
+                if (platform.HorizontalAlignment is not Microsoft.UI.Xaml.HorizontalAlignment.Stretch)
+                {
+                    platform.Width = measured.Width;
+                }
+                if (platform.VerticalAlignment is not Microsoft.UI.Xaml.VerticalAlignment.Stretch)
+                {
+                    platform.Height = measured.Height;
+                }
             }
         }
 
