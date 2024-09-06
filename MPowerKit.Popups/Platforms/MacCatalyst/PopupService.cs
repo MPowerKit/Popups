@@ -50,6 +50,8 @@ public partial class PopupService
 
         Windows.Add(popupWindow);
 
+        popupWindow.BackgroundColor = UIColor.Clear;
+
         popupWindow.RootViewController = handler.ViewController;
 
         popupWindow.MakeKeyAndVisible();
