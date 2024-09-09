@@ -66,7 +66,8 @@ public partial class PopupService : IPopupService
 
         if (animated)
         {
-            await page.AppearingAnimation();
+            //HACK: animation needs dispatcher to get page size ready
+            await page.Dispatcher.DispatchAsync(page.AppearingAnimation);
         }
     }
 
@@ -89,6 +90,8 @@ public partial class PopupService : IPopupService
 
     protected virtual async ValueTask HidePopupAsync(PopupPage page, Window parentWindow, bool animated = true)
     {
+        if (page.IsClosing) return;
+
         if (!PopupStack.Contains(page))
         {
             throw new InvalidOperationException("Popup stack does not contain chosen page");
@@ -97,6 +100,8 @@ public partial class PopupService : IPopupService
         {
             throw new InvalidOperationException("Parent window not found");
         }
+
+        page.IsClosing = true;
 
         animated = animated && AnimationHelper.SystemAnimationsEnabled;
 

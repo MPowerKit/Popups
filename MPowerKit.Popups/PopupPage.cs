@@ -33,11 +33,13 @@ public class PopupPage : ContentPage
 {
     public event EventHandler<RoutedEventArgs>? BackgroundClicked;
 
+    public bool IsClosing { get; set; }
+
     public PopupPage()
     {
         App_Dict_ValuesChanged(null, null);
 
-        var dict = Application.Current.Resources as Microsoft.Maui.Controls.Internals.IResourceDictionary;
+        var dict = Application.Current!.Resources as Microsoft.Maui.Controls.Internals.IResourceDictionary;
         dict.ValuesChanged += App_Dict_ValuesChanged;
 
         BackgroundColor = Color.FromArgb("#50000000");
@@ -49,13 +51,13 @@ public class PopupPage : ContentPage
 
     protected virtual void PopupPage_Unloaded(object? sender, EventArgs e)
     {
-        var dict = Application.Current.Resources as Microsoft.Maui.Controls.Internals.IResourceDictionary;
+        var dict = Application.Current!.Resources as Microsoft.Maui.Controls.Internals.IResourceDictionary;
         dict.ValuesChanged -= App_Dict_ValuesChanged;
     }
 
     protected virtual void App_Dict_ValuesChanged(object? sender, Microsoft.Maui.Controls.Internals.ResourcesChangedEventArgs e)
     {
-        foreach (var dictionary in Application.Current.Resources.MergedDictionaries)
+        foreach (var dictionary in Application.Current!.Resources.MergedDictionaries)
         {
             if (this.Resources.MergedDictionaries.Contains(dictionary)) continue;
 
@@ -63,7 +65,7 @@ public class PopupPage : ContentPage
         }
     }
 
-    protected override void OnPropertyChanged([CallerMemberName] string propertyName = null)
+    protected override void OnPropertyChanged([CallerMemberName] string? propertyName = null)
     {
         base.OnPropertyChanged(propertyName);
 
@@ -78,42 +80,42 @@ public class PopupPage : ContentPage
         return false;
     }
 
-    internal void PreparingAnimation()
+    public virtual void PreparingAnimation()
     {
         if (!IsAnimationEnabled) return;
 
-        Animation?.Preparing(Content, this);
+        Animation?.Preparing(InternalChildren.OfType<View>().FirstOrDefault(), this);
     }
 
-    internal void DisposingAnimation()
+    public virtual void DisposingAnimation()
     {
         if (!IsAnimationEnabled) return;
 
-        Animation?.Disposing(Content, this);
+        Animation?.Disposing(InternalChildren.OfType<View>().FirstOrDefault(), this);
     }
 
-    internal async Task AppearingAnimation()
+    public virtual async Task AppearingAnimation()
     {
         OnAppearingAnimationBegin();
         await OnAppearingAnimationBeginAsync();
 
         if (IsAnimationEnabled && Animation is not null)
         {
-            await Animation.Appearing(Content, this);
+            await Animation.Appearing(InternalChildren.OfType<View>().FirstOrDefault(), this);
         }
 
         OnAppearingAnimationEnd();
         await OnAppearingAnimationEndAsync();
     }
 
-    internal async Task DisappearingAnimation()
+    public virtual async Task DisappearingAnimation()
     {
         OnDisappearingAnimationBegin();
         await OnDisappearingAnimationBeginAsync();
 
         if (IsAnimationEnabled && Animation is not null)
         {
-            await Animation.Disappearing(Content, this);
+            await Animation.Disappearing(InternalChildren.OfType<View>().FirstOrDefault(), this);
         }
 
         OnDisappearingAnimationEnd();

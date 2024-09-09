@@ -2,10 +2,12 @@
 <popup:PopupPage x:Class="Sample.PopupTestPage"
                  xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
                  xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+                 xmlns:anim="clr-namespace:MPowerKit.Popups.Animations;assembly=MPowerKit.Popups"
                  xmlns:popup="clr-namespace:MPowerKit.Popups;assembly=MPowerKit.Popups"
                  Title="PopupTestPage"
                  BackgroundInputTransparent="False"
                  CloseOnBackgroundClick="True">
+
     <Grid Padding="50"
           BackgroundColor="Red"
           HorizontalOptions="Center"

@@ -17,7 +17,7 @@ public static class BuilderExtensions
                 {
                     d.OnBackPressed(activity =>
                     {
-                        var popupService = Application.Current.Handler.MauiContext.Services.GetService<IPopupService>();
+                        var popupService = IPlatformApplication.Current!.Services.GetService<IPopupService>();
 
                         if (popupService is null || popupService.PopupStack.Count == 0) return false;
 

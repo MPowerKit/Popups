@@ -38,6 +38,8 @@ public partial class PopupService
 
         AddToVisualTree(handler);
 
+        (prevKeyWindow ?? window).WindowLevel = -1;
+
         StorePrevKeyWindow(prevKeyWindow);
     }
 
@@ -73,7 +75,11 @@ public partial class PopupService
 
         RemoveFromVisualTree(handler);
 
-        (RestorePrevKeyWindow() ?? window).MakeKeyWindow();
+        var wnd = RestorePrevKeyWindow() ?? window;
+
+        wnd.WindowLevel = UIWindowLevel.Normal;
+
+        wnd.MakeKeyWindow();
     }
 
     protected virtual void RemoveFromVisualTree(IPlatformViewHandler handler)

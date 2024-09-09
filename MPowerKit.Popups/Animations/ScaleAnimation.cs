@@ -32,6 +32,9 @@ public class ScaleAnimation : FadeAnimation
         if (content == null) return;
 
         UpdateDefaultProperties(content);
+
+        //HACK: this removes flickering on appearing
+        content.TranslationX = content.TranslationY = -1000000d;
     }
 
     public override void Disposing(View content, PopupPage page)
@@ -51,6 +54,10 @@ public class ScaleAnimation : FadeAnimation
 
         if (content is not null)
         {
+            //HACK: restore default translations
+            content.TranslationX = _defaultTranslationX;
+            content.TranslationY = _defaultTranslationY;
+
             var topOffset = GetTopOffset(content, page) * ScaleIn;
             var leftOffset = GetLeftOffset(content, page) * ScaleIn;
 

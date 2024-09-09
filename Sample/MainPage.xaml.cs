@@ -1,20 +1,19 @@
-﻿using MPowerKit.Popups;
-using MPowerKit.Popups.Interfaces;
+﻿using MPowerKit.Popups.Interfaces;
 
 namespace Sample;
 
 public partial class MainPage
 {
-    int count = 0;
+    int count;
+
+    public IPopupService PopupService { get; }
 
     public MainPage()
     {
         InitializeComponent();
 
-        PopupService = new PopupService();
+        PopupService = MPowerKit.Popups.PopupService.Current;
     }
-
-    public IPopupService PopupService { get; }
 
     private void OnCounterClicked(object sender, EventArgs e)
     {

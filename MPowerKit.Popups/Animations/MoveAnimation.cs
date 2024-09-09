@@ -27,6 +27,9 @@ public class MoveAnimation : FadeBackgroundAnimation
         if (content is null) return;
 
         UpdateDefaultTranslations(content);
+
+        //HACK: this removes flickering on appearing
+        content.TranslationX = content.TranslationY = -1000000d;
     }
 
     public override void Disposing(View content, PopupPage page)
@@ -45,6 +48,10 @@ public class MoveAnimation : FadeBackgroundAnimation
 
         if (content is not null)
         {
+            //HACK: restore default translations
+            content.TranslationX = _defaultTranslationX;
+            content.TranslationY = _defaultTranslationY;
+
             var topOffset = GetTopOffset(content, page);
             var leftOffset = GetLeftOffset(content, page);
 
