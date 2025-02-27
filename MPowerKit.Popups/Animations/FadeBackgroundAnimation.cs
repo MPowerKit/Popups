@@ -8,7 +8,7 @@ public class FadeBackgroundAnimation : BaseAnimation
 
     public bool HasBackgroundAnimation { get; set; } = true;
 
-    public override void Preparing(View content, PopupPage page)
+    public override void Preparing(View? content, PopupPage page)
     {
         if (!HasBackgroundAnimation || page.BackgroundColor is null) return;
 
@@ -17,14 +17,14 @@ public class FadeBackgroundAnimation : BaseAnimation
         page.BackgroundColor = GetColor(0);
     }
 
-    public override void Disposing(View content, PopupPage page)
+    public override void Disposing(View? content, PopupPage page)
     {
         if (!HasBackgroundAnimation || _backgroundColor is null) return;
 
         page.BackgroundColor = _backgroundColor;
     }
 
-    public override Task Appearing(View content, PopupPage page)
+    public override Task Appearing(View? content, PopupPage page)
     {
         if (!HasBackgroundAnimation || _backgroundColor is null) return Task.CompletedTask;
 
@@ -43,7 +43,7 @@ public class FadeBackgroundAnimation : BaseAnimation
         return tcs.Task;
     }
 
-    public override Task Disappearing(View content, PopupPage page)
+    public override Task Disappearing(View? content, PopupPage page)
     {
         if (!HasBackgroundAnimation || page.BackgroundColor is null) return Task.CompletedTask;
 

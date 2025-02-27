@@ -13,7 +13,7 @@ public partial class PopupService
 {
     protected virtual partial void AttachToWindow(PopupPage page, IViewHandler pageHandler, Window parentWindow)
     {
-        HandleAccessibility(true, page.DisableAndroidAccessibilityHandling, parentWindow);
+        HandleAccessibility(true, page, parentWindow.Page);
 
         var activity = parentWindow.Handler.PlatformView as Android.App.Activity;
 
@@ -125,7 +125,7 @@ public partial class PopupService
     {
         var handler = (pageHandler as IPlatformViewHandler)!;
 
-        HandleAccessibility(false, page.DisableAndroidAccessibilityHandling, parentWindow);
+        HandleAccessibility(false, page, parentWindow.Page);
 
         RemoveFromVisualTree(page, handler);
     }
@@ -142,43 +142,63 @@ public partial class PopupService
     }
 
     //! important keeps reference to pages that accessibility has applied to. This is so accessibility can be removed properly when popup is removed. #https://github.com/LuckyDucko/Mopups/issues/93
-    protected List<View?> AccessibilityViews { get; } = [];
-    protected virtual void HandleAccessibility(bool showPopup, bool disableAccessibilityHandling, Window window)
+    protected Dictionary<PopupPage, Dictionary<ViewGroup, (Android.Views.ImportantForAccessibility, Android.Views.DescendantFocusability)>> AccessibilityViews = [];
+    protected virtual void HandleAccessibility(bool showPopup, PopupPage popupPage, Page? mainPage)
     {
-        if (disableAccessibilityHandling) return;
+        if (!popupPage.EnableAndroidAccessibilityHandling || mainPage is null) return;
 
         if (showPopup)
         {
-            var mainPage = window.Page;
-            if (mainPage is null) return;
+            Dictionary<ViewGroup, (Android.Views.ImportantForAccessibility, Android.Views.DescendantFocusability)> accessViews = [];
 
-            AccessibilityViews.Add(mainPage.Handler?.PlatformView as View);
-
-            if (mainPage.Navigation.NavigationStack.Count > 0)
+            // store previous accessibility settings
+            if (mainPage.Handler?.PlatformView is ViewGroup pageView
+                && pageView.ImportantForAccessibility is not Android.Views.ImportantForAccessibility.NoHideDescendants)
             {
-                AccessibilityViews.Add(mainPage.Navigation?.NavigationStack[^1]?.Handler?.PlatformView as View);
+                accessViews[pageView] = (pageView.ImportantForAccessibility, pageView.DescendantFocusability);
             }
 
-            if (mainPage.Navigation!.ModalStack.Count > 0)
+            if (mainPage.Navigation.NavigationStack.Count > 0
+                && mainPage.Navigation?.NavigationStack[^1]?.Handler?.PlatformView is ViewGroup navStackView
+                && navStackView.ImportantForAccessibility is not Android.Views.ImportantForAccessibility.NoHideDescendants)
             {
-                AccessibilityViews.Add(mainPage.Navigation?.ModalStack[^1]?.Handler?.PlatformView as View);
+                accessViews[navStackView] = (navStackView.ImportantForAccessibility, navStackView.DescendantFocusability);
+            }
+
+            if (mainPage.Navigation!.ModalStack.Count > 0
+                && mainPage.Navigation?.ModalStack[^1]?.Handler?.PlatformView is ViewGroup modalStackView
+                && modalStackView.ImportantForAccessibility is not Android.Views.ImportantForAccessibility.NoHideDescendants)
+            {
+                accessViews[modalStackView] = (modalStackView.ImportantForAccessibility, modalStackView.DescendantFocusability);
+            }
+
+            if (accessViews.Count > 0)
+            {
+                AccessibilityViews[popupPage] = accessViews;
             }
         }
 
-        foreach (var view in AccessibilityViews)
+        if (AccessibilityViews.TryGetValue(popupPage, out var views))
         {
-            if (view is null) continue;
+            foreach (var view in views)
+            {
+                if (showPopup)
+                {
+                    view.Key.ImportantForAccessibility = Android.Views.ImportantForAccessibility.NoHideDescendants;
+                    view.Key.DescendantFocusability = Android.Views.DescendantFocusability.BlockDescendants;
+                    view.Key.ClearFocus();
+                }
+                else
+                {
+                    view.Key.ImportantForAccessibility = view.Value.Item1;
+                    view.Key.DescendantFocusability = view.Value.Item2;
+                }
+            }
 
-            // Screen reader
-            view.ImportantForAccessibility = showPopup
-                ? Android.Views.ImportantForAccessibility.NoHideDescendants
-                : Android.Views.ImportantForAccessibility.Auto;
-
-            // Keyboard navigation
-            ((ViewGroup)view).DescendantFocusability = showPopup
-                ? Android.Views.DescendantFocusability.BlockDescendants
-                : Android.Views.DescendantFocusability.AfterDescendants;
-            view.ClearFocus();
+            if (!showPopup)
+            {
+                AccessibilityViews.Remove(popupPage);
+            }
         }
     }
 

@@ -6,7 +6,8 @@
                  xmlns:popup="clr-namespace:MPowerKit.Popups;assembly=MPowerKit.Popups"
                  Title="PopupTestPage"
                  BackgroundInputTransparent="False"
-                 CloseOnBackgroundClick="True">
+                 CloseOnBackgroundClick="True"
+                 EnableAndroidAccessibilityHandling="True">
 
     <Grid Padding="50"
           BackgroundColor="Red"

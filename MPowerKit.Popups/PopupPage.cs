@@ -282,16 +282,16 @@ public class PopupPage : ContentPage
             );
     #endregion
 
-    #region DisableAndroidAccessibilityHandling
-    public bool DisableAndroidAccessibilityHandling
+    #region EnableAndroidAccessibilityHandling
+    public bool EnableAndroidAccessibilityHandling
     {
-        get { return (bool)GetValue(DisableAndroidAccessibilityHandlingProperty); }
-        set { SetValue(DisableAndroidAccessibilityHandlingProperty, value); }
+        get { return (bool)GetValue(EnableAndroidAccessibilityHandlingProperty); }
+        set { SetValue(EnableAndroidAccessibilityHandlingProperty, value); }
     }
 
-    public static readonly BindableProperty DisableAndroidAccessibilityHandlingProperty =
+    public static readonly BindableProperty EnableAndroidAccessibilityHandlingProperty =
         BindableProperty.Create(
-            nameof(DisableAndroidAccessibilityHandling),
+            nameof(EnableAndroidAccessibilityHandling),
             typeof(bool),
             typeof(PopupPage)
             );
