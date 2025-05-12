@@ -37,7 +37,7 @@ public class PopupPage : ContentPage
 
     public PopupPage()
     {
-        App_Dict_ValuesChanged(null, null);
+        App_Dict_ValuesChanged(null, EventArgs.Empty);
 
         var dict = Application.Current!.Resources as Microsoft.Maui.Controls.Internals.IResourceDictionary;
         dict.ValuesChanged += App_Dict_ValuesChanged;
@@ -55,7 +55,7 @@ public class PopupPage : ContentPage
         dict.ValuesChanged -= App_Dict_ValuesChanged;
     }
 
-    protected virtual void App_Dict_ValuesChanged(object? sender, Microsoft.Maui.Controls.Internals.ResourcesChangedEventArgs e)
+    protected virtual void App_Dict_ValuesChanged(object? sender, EventArgs e)
     {
         foreach (var dictionary in Application.Current!.Resources.MergedDictionaries)
         {

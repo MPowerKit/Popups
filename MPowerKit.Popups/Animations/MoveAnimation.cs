@@ -20,7 +20,7 @@ public class MoveAnimation : FadeBackgroundAnimation
         EasingOut = Easing.SinIn;
     }
 
-    public override void Preparing(View content, PopupPage page)
+    public override void Preparing(View? content, PopupPage page)
     {
         base.Preparing(content, page);
 
@@ -32,7 +32,7 @@ public class MoveAnimation : FadeBackgroundAnimation
         content.TranslationX = content.TranslationY = -1000000d;
     }
 
-    public override void Disposing(View content, PopupPage page)
+    public override void Disposing(View? content, PopupPage page)
     {
         base.Disposing(content, page);
 
@@ -42,7 +42,7 @@ public class MoveAnimation : FadeBackgroundAnimation
         content.TranslationY = _defaultTranslationY;
     }
 
-    public override Task Appearing(View content, PopupPage page)
+    public override Task Appearing(View? content, PopupPage page)
     {
         List<Task> taskList = [base.Appearing(content, page)];
 
@@ -79,7 +79,7 @@ public class MoveAnimation : FadeBackgroundAnimation
         return Task.WhenAll(taskList);
     }
 
-    public override Task Disappearing(View content, PopupPage page)
+    public override Task Disappearing(View? content, PopupPage page)
     {
         List<Task> taskList = [base.Disappearing(content, page)];
 

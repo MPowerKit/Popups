@@ -86,7 +86,7 @@ public partial class PopupService
     {
         var view = handler.ViewController!.View!;
 
-        var popupWindow = view.Window;
+        var popupWindow = view.Window!;
 
         popupWindow.RootViewController!.DismissViewController(false, null);
         popupWindow.RootViewController.Dispose();

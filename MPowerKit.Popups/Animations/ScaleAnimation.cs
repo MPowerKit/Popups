@@ -25,7 +25,7 @@ public class ScaleAnimation : FadeAnimation
         if (PositionOut is not MoveAnimationOptions.Center) DurationOut = TimeSpan.FromMilliseconds(400);
     }
 
-    public override void Preparing(View content, PopupPage page)
+    public override void Preparing(View? content, PopupPage page)
     {
         base.Preparing(content, page);
 
@@ -37,7 +37,7 @@ public class ScaleAnimation : FadeAnimation
         content.TranslationX = content.TranslationY = -1000000d;
     }
 
-    public override void Disposing(View content, PopupPage page)
+    public override void Disposing(View? content, PopupPage page)
     {
         base.Disposing(content, page);
 
@@ -48,7 +48,7 @@ public class ScaleAnimation : FadeAnimation
         content.TranslationY = _defaultTranslationY;
     }
 
-    public override Task Appearing(View content, PopupPage page)
+    public override Task Appearing(View? content, PopupPage page)
     {
         List<Task> taskList = [base.Appearing(content, page)];
 
@@ -90,7 +90,7 @@ public class ScaleAnimation : FadeAnimation
         return Task.WhenAll(taskList);
     }
 
-    public override Task Disappearing(View content, PopupPage page)
+    public override Task Disappearing(View? content, PopupPage page)
     {
         List<Task> taskList = [base.Disappearing(content, page)];
 

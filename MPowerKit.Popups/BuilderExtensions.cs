@@ -28,7 +28,7 @@ public static class BuilderExtensions
                             popupService.HidePopupAsync(popupService.PopupStack[^1], true);
                             return true;
                         }
-                        catch (Exception ex)
+                        catch
                         {
                             return false;
                         }

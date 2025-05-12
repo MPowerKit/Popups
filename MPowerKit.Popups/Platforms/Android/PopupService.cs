@@ -207,11 +207,11 @@ public partial class PopupService
         private readonly ViewGroup _decorView;
         private readonly PopupPage _page;
         private readonly ViewGroup _platformView;
-        private View _top;
-        private View _bottom;
-        private View _left;
-        private View _right;
-        private Android.Graphics.Rect _prevInsets;
+        private View? _top;
+        private View? _bottom;
+        private View? _left;
+        private View? _right;
+        private Android.Graphics.Rect? _prevInsets;
 
         public ParentLayout(Context context, ViewGroup decorView, PopupPage page) : base(context)
         {
@@ -283,10 +283,10 @@ public partial class PopupService
             var centerParams = new LayoutParams(LayoutParams.MatchConstraint, LayoutParams.MatchConstraint);
             _platformView.LayoutParameters = centerParams;
 
-            ToggleViewVisiblility(_top, insets.Top);
-            ToggleViewVisiblility(_right, insets.Right);
-            ToggleViewVisiblility(_bottom, insets.Bottom);
-            ToggleViewVisiblility(_left, insets.Left);
+            ParentLayout.ToggleViewVisiblility(_top, insets.Top);
+            ParentLayout.ToggleViewVisiblility(_right, insets.Right);
+            ParentLayout.ToggleViewVisiblility(_bottom, insets.Bottom);
+            ParentLayout.ToggleViewVisiblility(_left, insets.Left);
 
             this.AddView(_top);
             this.AddView(_bottom);
@@ -323,19 +323,19 @@ public partial class PopupService
             {
                 var color = _page.BackgroundColor.ToPlatform();
 
-                _top.SetBackgroundColor(color);
-                _bottom.SetBackgroundColor(color);
-                _left.SetBackgroundColor(color);
-                _right.SetBackgroundColor(color);
+                _top!.SetBackgroundColor(color);
+                _bottom!.SetBackgroundColor(color);
+                _left!.SetBackgroundColor(color);
+                _right!.SetBackgroundColor(color);
             }
             else if (e.PropertyName == Page.OpacityProperty.PropertyName)
             {
                 var alpha = (float)_page.Opacity;
 
-                _top.Alpha = alpha;
-                _bottom.Alpha = alpha;
-                _left.Alpha = alpha;
-                _right.Alpha = alpha;
+                _top!.Alpha = alpha;
+                _bottom!.Alpha = alpha;
+                _left!.Alpha = alpha;
+                _right!.Alpha = alpha;
             }
         }
 
@@ -353,24 +353,24 @@ public partial class PopupService
                 insets = new Android.Graphics.Rect(ins.StableInsetLeft, ins.StableInsetTop, ins.StableInsetRight, ins.StableInsetBottom);
             }
 
-            if (_prevInsets.Top == insets.Top && _prevInsets.Bottom == insets.Bottom
+            if (_prevInsets!.Top == insets.Top && _prevInsets.Bottom == insets.Bottom
                 && _prevInsets.Left == insets.Left && _prevInsets.Right == insets.Right) return;
 
             _prevInsets = insets;
 
-            var topParams = _top.LayoutParameters!;
+            var topParams = _top!.LayoutParameters!;
             topParams.Height = insets.Top;
             _top.LayoutParameters = topParams;
 
-            var bottomParams = _bottom.LayoutParameters!;
+            var bottomParams = _bottom!.LayoutParameters!;
             bottomParams.Height = insets.Bottom;
             _bottom.LayoutParameters = bottomParams;
 
-            var leftParams = _left.LayoutParameters!;
+            var leftParams = _left!.LayoutParameters!;
             leftParams.Width = insets.Left;
             _left.LayoutParameters = leftParams;
 
-            var rightParams = _right.LayoutParameters!;
+            var rightParams = _right!.LayoutParameters!;
             rightParams.Width = insets.Right;
             _right.LayoutParameters = rightParams;
 
@@ -380,7 +380,7 @@ public partial class PopupService
             ToggleViewVisiblility(_left, insets.Left);
         }
 
-        private void ToggleViewVisiblility(View view, int size)
+        private static void ToggleViewVisiblility(View view, int size)
         {
             view.Visibility = size > 0 ? Android.Views.ViewStates.Visible : Android.Views.ViewStates.Gone;
         }

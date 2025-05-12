@@ -4,7 +4,7 @@ public class FadeAnimation : FadeBackgroundAnimation
 {
     private double _defaultOpacity;
 
-    public override void Preparing(View content, PopupPage page)
+    public override void Preparing(View? content, PopupPage page)
     {
         base.Preparing(content, page);
 
@@ -14,7 +14,7 @@ public class FadeAnimation : FadeBackgroundAnimation
         content.Opacity = 0;
     }
 
-    public override void Disposing(View content, PopupPage page)
+    public override void Disposing(View? content, PopupPage page)
     {
         base.Disposing(content, page);
 
@@ -23,7 +23,7 @@ public class FadeAnimation : FadeBackgroundAnimation
         content.Opacity = _defaultOpacity;
     }
 
-    public override Task Appearing(View content, PopupPage page)
+    public override Task Appearing(View? content, PopupPage page)
     {
         List<Task> tasks = [base.Appearing(content, page)];
 
@@ -37,7 +37,7 @@ public class FadeAnimation : FadeBackgroundAnimation
         return Task.WhenAll(tasks);
     }
 
-    public override Task Disappearing(View content, PopupPage page)
+    public override Task Disappearing(View? content, PopupPage page)
     {
         List<Task> tasks = [base.Disappearing(content, page)];
 
