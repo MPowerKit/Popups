@@ -1,11 +1,18 @@
 ﻿using Android.Content;
+using Android.Graphics.Drawables;
+using Android.OS;
+using Android.Views;
 
+using AndroidX.Activity;
 using AndroidX.ConstraintLayout.Widget;
 
 using Microsoft.Maui.Platform;
 
+using DialogFragment = AndroidX.Fragment.App.DialogFragment;
+using FragmentManager = AndroidX.Fragment.App.FragmentManager;
 using View = Android.Views.View;
 using ViewGroup = Android.Views.ViewGroup;
+using Window = Microsoft.Maui.Controls.Window;
 
 namespace MPowerKit.Popups;
 
@@ -15,9 +22,10 @@ public partial class PopupService
     {
         HandleAccessibility(true, page, parentWindow.Page);
 
-        var activity = parentWindow.Handler.PlatformView as Android.App.Activity;
+        var activity = parentWindow.Handler.PlatformView as Android.App.Activity
+            ?? throw new InvalidOperationException("Activity not found");
 
-        var dv = activity?.Window?.DecorView as ViewGroup
+        var dv = activity.Window?.DecorView as ViewGroup
             ?? throw new InvalidOperationException("DecorView of Activity not found");
 
         var handler = (pageHandler as IPlatformViewHandler)!;
@@ -108,17 +116,55 @@ public partial class PopupService
             e.Handled = !page.BackgroundInputTransparent;
         };
 
+#if NET9_0_OR_GREATER
+        void backPressCallback()
+        {
+            try
+            {
+                if (page.SendBackButtonPressed()) return;
+
+                this.HidePopupAsync(page, true);
+                return;
+            }
+            catch
+            {
+                activity.OnBackPressed();
+            }
+        }
+
+        AddToVisualTree(page, handler, dv, 10000, backPressCallback);
+#else
         AddToVisualTree(page, handler, dv, 10000);
+#endif
     }
 
-    protected virtual void AddToVisualTree(PopupPage page, IPlatformViewHandler handler, ViewGroup decorView, float elevation)
+    protected virtual void AddToVisualTree(PopupPage page, IPlatformViewHandler handler, ViewGroup decorView, float elevation
+#if NET9_0_OR_GREATER
+        , Action backPressCallback
+#endif
+        )
     {
         var view = !page.HasSystemPadding
             ? handler.PlatformView!
             : new ParentLayout(decorView.Context!, decorView, page);
-        view.Elevation = elevation;
 
+#if NET9_0_OR_GREATER
+        var manager = GetFragmentManager(handler.MauiContext!);
+
+        var fr = new PopupFragment(view, backPressCallback)
+        {
+            Cancelable = false,
+            ShowsDialog = true
+        };
+        var dialogFragmentId = View.GenerateViewId().ToString();
+
+        PageDialogFragmentAttached.SetDialogFragment(page, fr);
+
+        fr.Show(manager, dialogFragmentId);
+#else
+        view.Elevation = elevation;
         decorView.AddView(view);
+#endif
     }
 
     protected virtual partial void DetachFromWindow(PopupPage page, IViewHandler pageHandler, Window parentWindow)
@@ -132,13 +178,40 @@ public partial class PopupService
 
     protected virtual void RemoveFromVisualTree(PopupPage page, IPlatformViewHandler handler)
     {
+        View view;
+
         if (page.HasSystemPadding)
         {
             var layout = (handler.PlatformView!.Parent as ParentLayout)!;
             layout.RemoveGlobalLayoutListener();
-            layout.RemoveFromParent();
+#if NET8_0
+            view = layout;
         }
-        else handler.PlatformView!.RemoveFromParent();
+        else
+        {
+            view = handler.PlatformView!;
+        }
+
+        view.RemoveFromParent();
+#else
+        }
+
+        var manager = GetFragmentManager(handler.MauiContext!);
+        var fr = PageDialogFragmentAttached.GetDialogFragment(page);
+        PageDialogFragmentAttached.SetDialogFragment(page, null);
+        fr.Dismiss();
+#endif
+
+        handler.DisconnectHandler();
+    }
+
+    public virtual FragmentManager GetFragmentManager(IMauiContext mauiContext)
+    {
+        var fragmentManager = mauiContext.Services.GetService<FragmentManager>();
+
+        return fragmentManager
+            ?? mauiContext.Context?.GetFragmentManager()
+            ?? throw new InvalidOperationException("FragmentManager Not Found");
     }
 
     //! important keeps reference to pages that accessibility has applied to. This is so accessibility can be removed properly when popup is removed. #https://github.com/LuckyDucko/Mopups/issues/93
@@ -198,6 +271,73 @@ public partial class PopupService
             if (!showPopup)
             {
                 AccessibilityViews.Remove(popupPage);
+            }
+        }
+    }
+
+    public class PopupFragment : DialogFragment
+    {
+        private readonly View _view;
+        private readonly Action _backPress;
+
+        public PopupFragment(View view, Action backPress)
+        {
+            _view = view;
+            _backPress = backPress;
+        }
+
+        public override global::Android.App.Dialog OnCreateDialog(Bundle? savedInstanceState)
+        {
+            var dialog = new PopupComponentDialog(RequireContext(), Theme, _backPress);
+
+            dialog.Window!.SetBackgroundDrawable(new ColorDrawable(Android.Graphics.Color.Transparent));
+            dialog.Window.AddFlags(WindowManagerFlags.LayoutNoLimits);
+            dialog.Window.SetElevation(10000);
+            return dialog;
+        }
+
+        public override View? OnCreateView(LayoutInflater inflater, ViewGroup? container, Bundle? savedInstanceState)
+        {
+            var v = new View(Context);
+            v.SetBackgroundColor(Android.Graphics.Color.Red);
+            _view.LayoutParameters = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.MatchParent);
+            return _view;
+        }
+
+        public override void OnCreate(Bundle? savedInstanceState)
+        {
+            base.OnCreate(savedInstanceState);
+            SetStyle(DialogFragment.StyleNormal, Resource.Style.Maui_MainTheme_NoActionBar);
+        }
+
+        public class PopupComponentDialog : ComponentDialog
+        {
+            public PopupComponentDialog(Context context, int themeResId, Action backPress) : base(context, themeResId)
+            {
+                this.OnBackPressedDispatcher.AddCallback(new CallBack(true, this, backPress));
+            }
+
+            public class CallBack : OnBackPressedCallback
+            {
+                readonly WeakReference<ComponentDialog> _customComponentDialog;
+                private readonly Action _backPress;
+
+                public CallBack(bool enabled, ComponentDialog customComponentDialog, Action backPress) : base(enabled)
+                {
+                    _customComponentDialog = new(customComponentDialog);
+                    _backPress = backPress;
+                }
+
+                public override void HandleOnBackPressed()
+                {
+                    if (!_customComponentDialog.TryGetTarget(out var customComponentDialog) ||
+                        customComponentDialog.Context.GetActivity() is not global::Android.App.Activity activity)
+                    {
+                        return;
+                    }
+
+                    _backPress?.Invoke();
+                }
             }
         }
     }
@@ -385,4 +525,20 @@ public partial class PopupService
             view.Visibility = size > 0 ? Android.Views.ViewStates.Visible : Android.Views.ViewStates.Gone;
         }
     }
+}
+
+public static class PageDialogFragmentAttached
+{
+    #region ServiceScope
+    public static readonly BindableProperty DialogFragmentProperty =
+        BindableProperty.CreateAttached(
+            "DialogFragment",
+            typeof(DialogFragment),
+            typeof(PageDialogFragmentAttached),
+            null);
+
+    public static DialogFragment GetDialogFragment(BindableObject view) => (DialogFragment)view.GetValue(DialogFragmentProperty);
+
+    public static void SetDialogFragment(BindableObject view, DialogFragment value) => view.SetValue(DialogFragmentProperty, value);
+    #endregion
 }
