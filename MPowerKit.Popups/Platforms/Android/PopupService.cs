@@ -119,23 +119,28 @@ public partial class PopupService
 #if NET9_0_OR_GREATER
         void backPressCallback()
         {
-            try
-            {
-                if (page.SendBackButtonPressed()) return;
-
-                this.HidePopupAsync(page, true);
-                return;
-            }
-            catch
-            {
-                activity.OnBackPressed();
-            }
+            BackPressCallback(page, activity);
         }
 
         AddToVisualTree(page, handler, dv, 10000, backPressCallback);
 #else
         AddToVisualTree(page, handler, dv, 10000);
 #endif
+    }
+
+    protected virtual void BackPressCallback(PopupPage page, Android.App.Activity activity)
+    {
+        try
+        {
+            if (page.SendBackButtonPressed()) return;
+
+            this.HidePopupAsync(page, true);
+            return;
+        }
+        catch
+        {
+            activity.OnBackPressed();
+        }
     }
 
     protected virtual void AddToVisualTree(PopupPage page, IPlatformViewHandler handler, ViewGroup decorView, float elevation
