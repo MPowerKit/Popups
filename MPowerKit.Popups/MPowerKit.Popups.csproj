@@ -17,7 +17,7 @@
 
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 		<Title>MPowerKit.Popups</Title>
-		<Version>1.4.1.2</Version>
+		<Version>1.4.2</Version>
 		<Authors>MPowerKit,Alex Dobrynin</Authors>
 		<Description>.NET MAUI popup library which allows you to open MAUI pages as a popup. Also the library allows you to use very simple and flexible animations for showing popup pages.</Description>
 		<Copyright>MPowerKit</Copyright>
