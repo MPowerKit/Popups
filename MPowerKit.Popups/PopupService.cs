@@ -120,6 +120,12 @@ public partial class PopupService : IPopupService
         {
             page.DisposingAnimation();
         }
+
+        page.BindingContext = null;
+        page.Behaviors.Clear();
+#if NET9_0_OR_GREATER
+        page.DisconnectHandlers();
+#endif
     }
 
     protected virtual partial void AttachToWindow(PopupPage page, IViewHandler pageHandler, Window parentWindow);

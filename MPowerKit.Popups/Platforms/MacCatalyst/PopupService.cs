@@ -36,6 +36,12 @@ public partial class PopupService
 
         var prevKeyWindow = GetKeyWindow();
 
+        var action = new DisposableAction(() =>
+        {
+            handler.ViewController!.View!.RemoveGestureRecognizer(gr);
+        });
+        page.SetValue(DisposableActionAttached.DisposableActionProperty, action);
+
         AddToVisualTree(handler);
 
         (prevKeyWindow ?? window).WindowLevel = -1;
@@ -66,12 +72,8 @@ public partial class PopupService
 
         var handler = (pageHandler as PageHandler)!;
 
-        var view = handler.ViewController!.View!;
-
-        foreach (var gr in view.GestureRecognizers!.ToList())
-        {
-            view.RemoveGestureRecognizer(gr);
-        }
+        var action = page.GetValue(DisposableActionAttached.DisposableActionProperty) as DisposableAction;
+        action?.Dispose();
 
         RemoveFromVisualTree(handler);
 

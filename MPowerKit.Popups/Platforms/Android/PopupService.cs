@@ -8,6 +8,8 @@ using AndroidX.ConstraintLayout.Widget;
 
 using Microsoft.Maui.Platform;
 
+using static Android.Views.View;
+
 using DialogFragment = AndroidX.Fragment.App.DialogFragment;
 using FragmentManager = AndroidX.Fragment.App.FragmentManager;
 using View = Android.Views.View;
@@ -30,19 +32,21 @@ public partial class PopupService
 
         var handler = (pageHandler as IPlatformViewHandler)!;
 
-        handler.PlatformView!.ViewAttachedToWindow += (s, e) =>
+        EventHandler<ViewAttachedToWindowEventArgs> attachedHandler = (s, e) =>
         {
             dv.Context!.HideKeyboard(dv);
         };
+        handler.PlatformView!.ViewAttachedToWindow += attachedHandler;
 
-        handler.PlatformView.ViewDetachedFromWindow += (s, e) =>
+        EventHandler<ViewDetachedFromWindowEventArgs> detachedHandler = (s, e) =>
         {
             dv.Context!.HideKeyboard(dv);
         };
+        handler.PlatformView.ViewDetachedFromWindow += detachedHandler;
 
         bool keyboardVisible = false;
 
-        handler.PlatformView!.ViewTreeObserver!.GlobalLayout += (s, e) =>
+        EventHandler globalLayoutHandler = (s, e) =>
         {
             var view = dv.FindViewById(Android.Resource.Id.Content);
 
@@ -69,8 +73,9 @@ public partial class PopupService
                 }
             }
         };
+        handler.PlatformView!.ViewTreeObserver!.GlobalLayout += globalLayoutHandler;
 
-        handler.PlatformView.Touch += (s, e) =>
+        EventHandler<View.TouchEventArgs> touchHandler = (s, e) =>
         {
             var view = (s as ViewGroup)!;
 
@@ -97,7 +102,7 @@ public partial class PopupService
                 }
             }
 
-            if (e.Event!.Action is Android.Views.MotionEventActions.Down)
+            if (e.Event!.Action is MotionEventActions.Down)
             {
                 if (!page.BackgroundInputTransparent && keyboardVisible)
                 {
@@ -108,21 +113,26 @@ public partial class PopupService
                 }
             }
 
-            if (e.Event!.Action is Android.Views.MotionEventActions.Up)
+            if (e.Event!.Action is MotionEventActions.Up)
             {
                 page.SendBackgroundClick();
             }
 
             e.Handled = !page.BackgroundInputTransparent;
         };
+        handler.PlatformView.Touch += touchHandler;
+
+        var action = new DisposableAction(() =>
+        {
+            handler.PlatformView!.ViewAttachedToWindow -= attachedHandler;
+            handler.PlatformView.ViewDetachedFromWindow -= detachedHandler;
+            handler.PlatformView.ViewTreeObserver!.GlobalLayout -= globalLayoutHandler;
+            handler.PlatformView.Touch -= touchHandler;
+        });
+        page.SetValue(DisposableActionAttached.DisposableActionProperty, action);
 
 #if NET9_0_OR_GREATER
-        void backPressCallback()
-        {
-            BackPressCallback(page, activity);
-        }
-
-        AddToVisualTree(page, handler, dv, 10000, backPressCallback);
+        AddToVisualTree(page, handler, dv, 10000, () => BackPressCallback(page, activity));
 #else
         AddToVisualTree(page, handler, dv, 10000);
 #endif
@@ -178,6 +188,9 @@ public partial class PopupService
 
         HandleAccessibility(false, page, parentWindow.Page);
 
+        var action = page.GetValue(DisposableActionAttached.DisposableActionProperty) as DisposableAction;
+        action?.Dispose();
+
         RemoveFromVisualTree(page, handler);
     }
 
@@ -206,8 +219,6 @@ public partial class PopupService
         PageDialogFragmentAttached.SetDialogFragment(page, null);
         fr.Dismiss();
 #endif
-
-        handler.DisconnectHandler();
     }
 
     public virtual FragmentManager GetFragmentManager(IMauiContext mauiContext)

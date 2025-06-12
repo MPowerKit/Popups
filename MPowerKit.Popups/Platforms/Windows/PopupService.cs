@@ -18,12 +18,12 @@ public partial class PopupService
 
         var inputPane = InputPaneInterop.GetForWindow(uiWindow!.WindowHandle);
 
-        handler.PlatformView!.PointerPressed += (s, e) =>
+        PointerEventHandler pointerEventHandler = (s, e) =>
         {
             if (inputPane.Visible)
             {
                 inputPane.TryHide();
-                var element = FocusManager.GetFocusedElement(handler.PlatformView.XamlRoot) as Control;
+                var element = FocusManager.GetFocusedElement(handler.PlatformView!.XamlRoot) as Control;
                 element?.Focus(Microsoft.UI.Xaml.FocusState.Programmatic);
                 return;
             }
@@ -38,14 +38,9 @@ public partial class PopupService
 
             e.Handled = !page.BackgroundInputTransparent;
         };
+        handler.PlatformView!.PointerPressed += pointerEventHandler;
 
-        AddToVisualTree(page, handler, content);
-    }
-
-    protected virtual void AddToVisualTree(PopupPage page, IPlatformViewHandler handler, Panel windowContent)
-    {
         var platform = handler.PlatformView!;
-
         if (page.BackgroundInputTransparent)
         {
             platform.Margin = new Microsoft.UI.Xaml.Thickness(
@@ -58,25 +53,40 @@ public partial class PopupService
             PageContentSizeChanged(page, EventArgs.Empty);
 
             page.Content.SizeChanged += PageContentSizeChanged;
+        }
+        void PageContentSizeChanged(object? sender, EventArgs args)
+        {
+            var measured = (page.Content as IView).Measure(double.PositiveInfinity, double.PositiveInfinity);
 
-            void PageContentSizeChanged(object? sender, EventArgs args)
+            platform.HorizontalAlignment = page.Content.HorizontalOptions.ToPlatformHorizontal();
+            platform.VerticalAlignment = page.Content.VerticalOptions.ToPlatformVertical();
+
+            if (platform.HorizontalAlignment is not Microsoft.UI.Xaml.HorizontalAlignment.Stretch)
             {
-                var measured = (page.Content as IView).Measure(double.PositiveInfinity, double.PositiveInfinity);
-
-                platform.HorizontalAlignment = page.Content.HorizontalOptions.ToPlatformHorizontal();
-                platform.VerticalAlignment = page.Content.VerticalOptions.ToPlatformVertical();
-
-                if (platform.HorizontalAlignment is not Microsoft.UI.Xaml.HorizontalAlignment.Stretch)
-                {
-                    platform.Width = measured.Width;
-                }
-                if (platform.VerticalAlignment is not Microsoft.UI.Xaml.VerticalAlignment.Stretch)
-                {
-                    platform.Height = measured.Height;
-                }
+                platform.Width = measured.Width;
+            }
+            if (platform.VerticalAlignment is not Microsoft.UI.Xaml.VerticalAlignment.Stretch)
+            {
+                platform.Height = measured.Height;
             }
         }
 
+        var action = new DisposableAction(() =>
+        {
+            handler.PlatformView!.PointerPressed -= pointerEventHandler;
+            if (page.BackgroundInputTransparent)
+            {
+                page.Content.SizeChanged -= PageContentSizeChanged;
+            }
+        });
+        page.SetValue(DisposableActionAttached.DisposableActionProperty, action);
+
+        AddToVisualTree(page, handler, content);
+    }
+
+    protected virtual void AddToVisualTree(PopupPage page, IPlatformViewHandler handler, Panel windowContent)
+    {
+        var platform = handler.PlatformView!;
         windowContent.Children.Add(platform);
     }
 
@@ -88,6 +98,9 @@ public partial class PopupService
             ?? throw new InvalidOperationException("Window not found");
 
         var handler = (pageHandler as IPlatformViewHandler)!;
+
+        var action = page.GetValue(DisposableActionAttached.DisposableActionProperty) as DisposableAction;
+        action?.Dispose();
 
         RemoveFromVisualTree(page, handler, content);
     }
