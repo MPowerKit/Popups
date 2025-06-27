@@ -18,7 +18,7 @@ public partial class PopupService
 
         var inputPane = InputPaneInterop.GetForWindow(uiWindow!.WindowHandle);
 
-        PointerEventHandler pointerEventHandler = (s, e) =>
+        void pointerEventHandler(object s, PointerRoutedEventArgs e)
         {
             if (inputPane.Visible)
             {
@@ -37,7 +37,7 @@ public partial class PopupService
             page.SendBackgroundClick();
 
             e.Handled = !page.BackgroundInputTransparent;
-        };
+        }
         handler.PlatformView!.PointerPressed += pointerEventHandler;
 
         var platform = handler.PlatformView!;

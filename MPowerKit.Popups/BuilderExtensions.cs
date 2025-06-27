@@ -1,4 +1,8 @@
-﻿namespace MPowerKit.Popups;
+﻿#if ANDROID && NET8
+using Microsoft.Maui.LifecycleEvents;
+#endif
+
+namespace MPowerKit.Popups;
 
 public static class BuilderExtensions
 {

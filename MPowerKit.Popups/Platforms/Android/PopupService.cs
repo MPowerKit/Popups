@@ -1,6 +1,6 @@
-﻿using Android.Content;
+﻿using Android.App;
+using Android.Content;
 using Android.Graphics.Drawables;
-using Android.OS;
 using Android.Views;
 
 using AndroidX.Activity;
@@ -10,8 +10,6 @@ using Microsoft.Maui.Platform;
 
 using static Android.Views.View;
 
-using DialogFragment = AndroidX.Fragment.App.DialogFragment;
-using FragmentManager = AndroidX.Fragment.App.FragmentManager;
 using View = Android.Views.View;
 using ViewGroup = Android.Views.ViewGroup;
 using Window = Microsoft.Maui.Controls.Window;
@@ -24,7 +22,7 @@ public partial class PopupService
     {
         HandleAccessibility(true, page, parentWindow.Page);
 
-        var activity = parentWindow.Handler.PlatformView as Android.App.Activity
+        var activity = parentWindow.Handler.PlatformView as Activity
             ?? throw new InvalidOperationException("Activity not found");
 
         var dv = activity.Window?.DecorView as ViewGroup
@@ -32,21 +30,21 @@ public partial class PopupService
 
         var handler = (pageHandler as IPlatformViewHandler)!;
 
-        EventHandler<ViewAttachedToWindowEventArgs> attachedHandler = (s, e) =>
+        void attachedHandler(object? s, ViewAttachedToWindowEventArgs e)
         {
             dv.Context!.HideKeyboard(dv);
-        };
+        }
         handler.PlatformView!.ViewAttachedToWindow += attachedHandler;
 
-        EventHandler<ViewDetachedFromWindowEventArgs> detachedHandler = (s, e) =>
+        void detachedHandler(object? s, ViewDetachedFromWindowEventArgs e)
         {
             dv.Context!.HideKeyboard(dv);
-        };
+        }
         handler.PlatformView.ViewDetachedFromWindow += detachedHandler;
 
         bool keyboardVisible = false;
 
-        EventHandler globalLayoutHandler = (s, e) =>
+        void globalLayoutHandler(object? s, EventArgs e)
         {
             var view = dv.FindViewById(Android.Resource.Id.Content);
 
@@ -72,10 +70,10 @@ public partial class PopupService
                     keyboardVisible = false;
                 }
             }
-        };
+        }
         handler.PlatformView!.ViewTreeObserver!.GlobalLayout += globalLayoutHandler;
 
-        EventHandler<View.TouchEventArgs> touchHandler = (s, e) =>
+        void touchHandler(object? s, View.TouchEventArgs e)
         {
             var view = (s as ViewGroup)!;
 
@@ -119,7 +117,7 @@ public partial class PopupService
             }
 
             e.Handled = !page.BackgroundInputTransparent;
-        };
+        }
         handler.PlatformView.Touch += touchHandler;
 
         var action = new DisposableAction(() =>
@@ -138,14 +136,13 @@ public partial class PopupService
 #endif
     }
 
-    protected virtual void BackPressCallback(PopupPage page, Android.App.Activity activity)
+    protected virtual async void BackPressCallback(PopupPage page, Activity activity)
     {
         try
         {
             if (page.SendBackButtonPressed()) return;
 
-            this.HidePopupAsync(page, true);
-            return;
+            await this.HidePopupAsync(page, true);
         }
         catch
         {
@@ -164,18 +161,12 @@ public partial class PopupService
             : new ParentLayout(decorView.Context!, decorView, page);
 
 #if NET9_0_OR_GREATER
-        var manager = GetFragmentManager(handler.MauiContext!);
-
-        var fr = new PopupFragment(view, backPressCallback)
-        {
-            Cancelable = false,
-            ShowsDialog = true
-        };
-        var dialogFragmentId = View.GenerateViewId().ToString();
-
-        PageDialogFragmentAttached.SetDialogFragment(page, fr);
-
-        fr.Show(manager, dialogFragmentId);
+        var d = new PopupComponentDialog(Platform.CurrentActivity!, Resource.Style.Maui_MainTheme_NoActionBar, backPressCallback);
+        d.Window!.SetBackgroundDrawable(new ColorDrawable(Android.Graphics.Color.Transparent));
+        d.Window!.AddFlags(WindowManagerFlags.LayoutNoLimits);
+        d.SetContentView(view);
+        d.Show();
+        PagePopupDialogAttached.SetPopupDialog(page, d);
 #else
         view.Elevation = elevation;
         decorView.AddView(view);
@@ -196,7 +187,9 @@ public partial class PopupService
 
     protected virtual void RemoveFromVisualTree(PopupPage page, IPlatformViewHandler handler)
     {
+#if NET8_0
         View view;
+#endif
 
         if (page.HasSystemPadding)
         {
@@ -214,49 +207,39 @@ public partial class PopupService
 #else
         }
 
-        var manager = GetFragmentManager(handler.MauiContext!);
-        var fr = PageDialogFragmentAttached.GetDialogFragment(page);
-        PageDialogFragmentAttached.SetDialogFragment(page, null);
-        fr.Dismiss();
+        var d = PagePopupDialogAttached.GetPopupDialog(page);
+        PagePopupDialogAttached.SetPopupDialog(page, null);
+        d.Dismiss();
 #endif
     }
 
-    public virtual FragmentManager GetFragmentManager(IMauiContext mauiContext)
-    {
-        var fragmentManager = mauiContext.Services.GetService<FragmentManager>();
-
-        return fragmentManager
-            ?? mauiContext.Context?.GetFragmentManager()
-            ?? throw new InvalidOperationException("FragmentManager Not Found");
-    }
-
     //! important keeps reference to pages that accessibility has applied to. This is so accessibility can be removed properly when popup is removed. #https://github.com/LuckyDucko/Mopups/issues/93
-    protected Dictionary<PopupPage, Dictionary<ViewGroup, (Android.Views.ImportantForAccessibility, Android.Views.DescendantFocusability)>> AccessibilityViews = [];
+    protected Dictionary<PopupPage, Dictionary<ViewGroup, (ImportantForAccessibility, DescendantFocusability)>> AccessibilityViews = [];
     protected virtual void HandleAccessibility(bool showPopup, PopupPage popupPage, Page? mainPage)
     {
         if (!popupPage.EnableAndroidAccessibilityHandling || mainPage is null) return;
 
         if (showPopup)
         {
-            Dictionary<ViewGroup, (Android.Views.ImportantForAccessibility, Android.Views.DescendantFocusability)> accessViews = [];
+            Dictionary<ViewGroup, (ImportantForAccessibility, DescendantFocusability)> accessViews = [];
 
             // store previous accessibility settings
             if (mainPage.Handler?.PlatformView is ViewGroup pageView
-                && pageView.ImportantForAccessibility is not Android.Views.ImportantForAccessibility.NoHideDescendants)
+                && pageView.ImportantForAccessibility is not ImportantForAccessibility.NoHideDescendants)
             {
                 accessViews[pageView] = (pageView.ImportantForAccessibility, pageView.DescendantFocusability);
             }
 
             if (mainPage.Navigation.NavigationStack.Count > 0
                 && mainPage.Navigation?.NavigationStack[^1]?.Handler?.PlatformView is ViewGroup navStackView
-                && navStackView.ImportantForAccessibility is not Android.Views.ImportantForAccessibility.NoHideDescendants)
+                && navStackView.ImportantForAccessibility is not ImportantForAccessibility.NoHideDescendants)
             {
                 accessViews[navStackView] = (navStackView.ImportantForAccessibility, navStackView.DescendantFocusability);
             }
 
             if (mainPage.Navigation!.ModalStack.Count > 0
                 && mainPage.Navigation?.ModalStack[^1]?.Handler?.PlatformView is ViewGroup modalStackView
-                && modalStackView.ImportantForAccessibility is not Android.Views.ImportantForAccessibility.NoHideDescendants)
+                && modalStackView.ImportantForAccessibility is not ImportantForAccessibility.NoHideDescendants)
             {
                 accessViews[modalStackView] = (modalStackView.ImportantForAccessibility, modalStackView.DescendantFocusability);
             }
@@ -273,8 +256,8 @@ public partial class PopupService
             {
                 if (showPopup)
                 {
-                    view.Key.ImportantForAccessibility = Android.Views.ImportantForAccessibility.NoHideDescendants;
-                    view.Key.DescendantFocusability = Android.Views.DescendantFocusability.BlockDescendants;
+                    view.Key.ImportantForAccessibility = ImportantForAccessibility.NoHideDescendants;
+                    view.Key.DescendantFocusability = DescendantFocusability.BlockDescendants;
                     view.Key.ClearFocus();
                 }
                 else
@@ -291,74 +274,38 @@ public partial class PopupService
         }
     }
 
-    public class PopupFragment : DialogFragment
+    public class PopupComponentDialog : ComponentDialog
     {
-        private readonly View _view;
-        private readonly Action _backPress;
-
-        public PopupFragment(View view, Action backPress)
+        public PopupComponentDialog(Context context, int themeResId, Action backPress) : base(context, themeResId)
         {
-            _view = view;
-            _backPress = backPress;
+            this.OnBackPressedDispatcher.AddCallback(new CallBack(true, this, backPress));
         }
 
-        public override global::Android.App.Dialog OnCreateDialog(Bundle? savedInstanceState)
+        public class CallBack : OnBackPressedCallback
         {
-            var dialog = new PopupComponentDialog(RequireContext(), Theme, _backPress);
+            private readonly WeakReference<ComponentDialog> _customComponentDialog;
+            private readonly Action _backPress;
 
-            dialog.Window!.SetBackgroundDrawable(new ColorDrawable(Android.Graphics.Color.Transparent));
-            dialog.Window.AddFlags(WindowManagerFlags.LayoutNoLimits);
-            dialog.Window.SetElevation(10000);
-            return dialog;
-        }
-
-        public override View? OnCreateView(LayoutInflater inflater, ViewGroup? container, Bundle? savedInstanceState)
-        {
-            var v = new View(Context);
-            v.SetBackgroundColor(Android.Graphics.Color.Red);
-            _view.LayoutParameters = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.MatchParent);
-            return _view;
-        }
-
-        public override void OnCreate(Bundle? savedInstanceState)
-        {
-            base.OnCreate(savedInstanceState);
-            SetStyle(DialogFragment.StyleNormal, Resource.Style.Maui_MainTheme_NoActionBar);
-        }
-
-        public class PopupComponentDialog : ComponentDialog
-        {
-            public PopupComponentDialog(Context context, int themeResId, Action backPress) : base(context, themeResId)
+            public CallBack(bool enabled, ComponentDialog customComponentDialog, Action backPress) : base(enabled)
             {
-                this.OnBackPressedDispatcher.AddCallback(new CallBack(true, this, backPress));
+                _customComponentDialog = new(customComponentDialog);
+                _backPress = backPress;
             }
 
-            public class CallBack : OnBackPressedCallback
+            public override void HandleOnBackPressed()
             {
-                readonly WeakReference<ComponentDialog> _customComponentDialog;
-                private readonly Action _backPress;
-
-                public CallBack(bool enabled, ComponentDialog customComponentDialog, Action backPress) : base(enabled)
+                if (!_customComponentDialog.TryGetTarget(out var customComponentDialog) ||
+                    customComponentDialog.Context.GetActivity() is not Activity activity)
                 {
-                    _customComponentDialog = new(customComponentDialog);
-                    _backPress = backPress;
+                    return;
                 }
 
-                public override void HandleOnBackPressed()
-                {
-                    if (!_customComponentDialog.TryGetTarget(out var customComponentDialog) ||
-                        customComponentDialog.Context.GetActivity() is not global::Android.App.Activity activity)
-                    {
-                        return;
-                    }
-
-                    _backPress?.Invoke();
-                }
+                _backPress?.Invoke();
             }
         }
     }
 
-    public class ParentLayout : ConstraintLayout, Android.Views.ViewTreeObserver.IOnGlobalLayoutListener
+    public class ParentLayout : ConstraintLayout, ViewTreeObserver.IOnGlobalLayoutListener
     {
         private readonly ViewGroup _decorView;
         private readonly PopupPage _page;
@@ -538,23 +485,23 @@ public partial class PopupService
 
         private static void ToggleViewVisiblility(View view, int size)
         {
-            view.Visibility = size > 0 ? Android.Views.ViewStates.Visible : Android.Views.ViewStates.Gone;
+            view.Visibility = size > 0 ? ViewStates.Visible : ViewStates.Gone;
         }
     }
 }
 
-public static class PageDialogFragmentAttached
+public static class PagePopupDialogAttached
 {
     #region ServiceScope
-    public static readonly BindableProperty DialogFragmentProperty =
+    public static readonly BindableProperty PopupDialogProperty =
         BindableProperty.CreateAttached(
-            "DialogFragment",
-            typeof(DialogFragment),
-            typeof(PageDialogFragmentAttached),
+            "PopupDialog",
+            typeof(Dialog),
+            typeof(PagePopupDialogAttached),
             null);
 
-    public static DialogFragment GetDialogFragment(BindableObject view) => (DialogFragment)view.GetValue(DialogFragmentProperty);
+    public static Dialog GetPopupDialog(BindableObject view) => (Dialog)view.GetValue(PopupDialogProperty);
 
-    public static void SetDialogFragment(BindableObject view, DialogFragment value) => view.SetValue(DialogFragmentProperty, value);
+    public static void SetPopupDialog(BindableObject view, Dialog value) => view.SetValue(PopupDialogProperty, value);
     #endregion
 }
