@@ -7,7 +7,6 @@ namespace MPowerKit.Popups;
 public partial class PopupService : IPopupService
 {
     private static PopupService? _instance;
-
     public static IPopupService Current => _instance ??= new PopupService();
 
     protected List<PopupPage> InternalPopupStack { get; } = [];

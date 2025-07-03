@@ -1,5 +1,7 @@
-﻿#if ANDROID && NET8
+﻿#if ANDROID
 using Microsoft.Maui.LifecycleEvents;
+
+using MPowerKit.Popups.Interfaces;
 #endif
 
 namespace MPowerKit.Popups;
@@ -8,8 +10,8 @@ public static class BuilderExtensions
 {
     public static MauiAppBuilder UseMPowerKitPopups(this MauiAppBuilder builder)
     {
-        builder.Services.AddSingleton(PopupService.Current);
-#if ANDROID && NET8
+        builder.Services.AddSingleton(_ => PopupService.Current);
+#if ANDROID
         builder
             .ConfigureLifecycleEvents(static lifecycle =>
             {
@@ -17,7 +19,7 @@ public static class BuilderExtensions
                 {
                     d.OnBackPressed(static activity =>
                     {
-                        var popupService = IPlatformApplication.Current!.Services.GetService<MPowerKit.Popups.Interfaces.IPopupService>();
+                        var popupService = IPlatformApplication.Current!.Services.GetService<IPopupService>();
 
                         if (popupService is null || popupService.PopupStack.Count == 0) return false;
 
