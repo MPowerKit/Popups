@@ -19,7 +19,7 @@ public partial class PopupService : IPopupService
             throw new InvalidOperationException("This popup already presented");
         }
 
-        var window = Application.Current?.Windows[0];
+        var window = Application.Current?.Windows[^1];
 
         return ShowPopupAsync(page, window, animated);
     }

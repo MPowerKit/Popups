@@ -28,6 +28,16 @@ public partial class PopupService
         }
         set
         {
+            var oldFm = FragmentManager;
+
+            if (value == oldFm) return;
+
+            if (value != oldFm && oldFm != null)
+            {
+                oldFm.UnregisterFragmentLifecycleCallbacks(Observer!);
+                Observer = null;
+            }
+
             if (value is null)
             {
                 _fmReference = null;
@@ -53,17 +63,19 @@ public partial class PopupService
 
         var handler = (pageHandler as IPlatformViewHandler)!;
 
+        var pv = handler.PlatformView!;
+
         void attachedHandler(object? s, ViewAttachedToWindowEventArgs e)
         {
             dv.Context!.HideKeyboard(dv);
         }
-        handler.PlatformView!.ViewAttachedToWindow += attachedHandler;
+        pv.ViewAttachedToWindow += attachedHandler;
 
         void detachedHandler(object? s, ViewDetachedFromWindowEventArgs e)
         {
             dv.Context!.HideKeyboard(dv);
         }
-        handler.PlatformView.ViewDetachedFromWindow += detachedHandler;
+        pv.ViewDetachedFromWindow += detachedHandler;
 
         bool keyboardVisible = false;
 
@@ -86,15 +98,12 @@ public partial class PopupService
                     keyboardVisible = true;
                 }
             }
-            else
+            else if (keyboardVisible)
             {
-                if (keyboardVisible)
-                {
-                    keyboardVisible = false;
-                }
+                keyboardVisible = false;
             }
         }
-        handler.PlatformView!.ViewTreeObserver!.GlobalLayout += globalLayoutHandler;
+        pv.ViewTreeObserver!.GlobalLayout += globalLayoutHandler;
 
         void touchHandler(object? s, View.TouchEventArgs e)
         {
@@ -141,14 +150,14 @@ public partial class PopupService
 
             e.Handled = !page.BackgroundInputTransparent;
         }
-        handler.PlatformView.Touch += touchHandler;
+        pv.Touch += touchHandler;
 
         var action = new DisposableAction(() =>
         {
-            handler.PlatformView!.ViewAttachedToWindow -= attachedHandler;
-            handler.PlatformView.ViewDetachedFromWindow -= detachedHandler;
-            handler.PlatformView.ViewTreeObserver!.GlobalLayout -= globalLayoutHandler;
-            handler.PlatformView.Touch -= touchHandler;
+            pv.ViewAttachedToWindow -= attachedHandler;
+            pv.ViewDetachedFromWindow -= detachedHandler;
+            pv.ViewTreeObserver!.GlobalLayout -= globalLayoutHandler;
+            pv.Touch -= touchHandler;
         });
         page.SetValue(DisposableActionAttached.DisposableActionProperty, action);
 
@@ -163,10 +172,7 @@ public partial class PopupService
         view.Elevation = elevation;
 
 #if NET9_0_OR_GREATER
-        if (FragmentManager is null)
-        {
-            FragmentManager = AndroidExtensions.GetFragmentManager(handler.MauiContext!);
-        }
+        FragmentManager = AndroidExtensions.GetFragmentManager(handler.MauiContext!);
         Observer!.AttachView(view);
 #else
         decorView.AddView(view);
