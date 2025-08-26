@@ -77,34 +77,6 @@ public partial class PopupService
         }
         pv.ViewDetachedFromWindow += detachedHandler;
 
-        bool keyboardVisible = false;
-
-        void globalLayoutHandler(object? s, EventArgs e)
-        {
-            var view = dv.FindViewById(Android.Resource.Id.Content);
-
-            var r = new Android.Graphics.Rect();
-            view!.GetWindowVisibleDisplayFrame(r);
-            int screenHeight = view.RootView!.Height;
-
-            // r.bottom is the position above soft keypad or device button.
-            // if keypad is shown, the r.bottom is smaller than that before.
-            int keypadHeight = screenHeight - r.Bottom;
-
-            if (keypadHeight > screenHeight * 0.15)
-            {
-                if (!keyboardVisible)
-                {
-                    keyboardVisible = true;
-                }
-            }
-            else if (keyboardVisible)
-            {
-                keyboardVisible = false;
-            }
-        }
-        pv.ViewTreeObserver!.GlobalLayout += globalLayoutHandler;
-
         void touchHandler(object? s, View.TouchEventArgs e)
         {
             var view = (s as ViewGroup)!;
@@ -121,11 +93,8 @@ public partial class PopupService
                 if (rawx >= childx && rawx <= (child.Width + childx)
                     && rawy >= childy && rawy <= (child.Height + childy))
                 {
-                    if (keyboardVisible)
-                    {
-                        view.Context!.HideKeyboard(view);
-                        view.FindFocus()?.ClearFocus();
-                    }
+                    view.Context!.HideKeyboard(view);
+                    view.FindFocus()?.ClearFocus();
 
                     e.Handled = true;
                     return;
@@ -134,7 +103,7 @@ public partial class PopupService
 
             if (e.Event!.Action is MotionEventActions.Down)
             {
-                if (!page.BackgroundInputTransparent && keyboardVisible)
+                if (!page.BackgroundInputTransparent)
                 {
                     view.Context!.HideKeyboard(view);
                     view.FindFocus()?.ClearFocus();
@@ -156,7 +125,6 @@ public partial class PopupService
         {
             pv.ViewAttachedToWindow -= attachedHandler;
             pv.ViewDetachedFromWindow -= detachedHandler;
-            pv.ViewTreeObserver!.GlobalLayout -= globalLayoutHandler;
             pv.Touch -= touchHandler;
         });
         page.SetValue(DisposableActionAttached.DisposableActionProperty, action);
