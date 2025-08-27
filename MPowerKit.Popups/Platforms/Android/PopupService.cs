@@ -77,9 +77,8 @@ public partial class PopupService
         }
         pv.ViewDetachedFromWindow += detachedHandler;
 
-        var keyboardListener = new KeyboardListener();
-        var viewTreeObserver = pv.ViewTreeObserver!;
-        viewTreeObserver.AddOnGlobalLayoutListener(keyboardListener);
+        var keyboardListener = new KeyboardListener(dv);
+        pv.ViewTreeObserver?.AddOnGlobalLayoutListener(keyboardListener);
 
         void touchHandler(object? s, View.TouchEventArgs e)
         {
@@ -133,9 +132,9 @@ public partial class PopupService
             pv.ViewAttachedToWindow -= attachedHandler;
             pv.ViewDetachedFromWindow -= detachedHandler;
             pv.Touch -= touchHandler;
-            
-            if (viewTreeObserver.IsAlive)
-                viewTreeObserver.RemoveOnGlobalLayoutListener(keyboardListener);
+
+            if (pv.ViewTreeObserver?.IsAlive is true)
+                pv.ViewTreeObserver.RemoveOnGlobalLayoutListener(keyboardListener);
         });
         page.SetValue(DisposableActionAttached.DisposableActionProperty, action);
 

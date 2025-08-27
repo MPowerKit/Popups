@@ -4,13 +4,19 @@ namespace MPowerKit.Popups;
 
 public class KeyboardListener : Java.Lang.Object, ViewTreeObserver.IOnGlobalLayoutListener
 {
+    private readonly ViewGroup _decorView;
+
     public bool KeyboardVisible { get; private set; }
-    
+
+    public KeyboardListener(ViewGroup decorView)
+    {
+        _decorView = decorView;
+    }
+
     public void OnGlobalLayout()
     {
-        var view = Platform.CurrentActivity?.Window?.DecorView.FindViewById(Android.Resource.Id.Content);
-        if (view is null)
-            return;
+        var view = _decorView.FindViewById(Android.Resource.Id.Content);
+        if (view is null) return;
 
         var r = new Android.Graphics.Rect();
         view!.GetWindowVisibleDisplayFrame(r);
