@@ -53,6 +53,8 @@ public class PopupPage : ContentPage
     {
         var dict = Application.Current!.Resources as Microsoft.Maui.Controls.Internals.IResourceDictionary;
         dict.ValuesChanged -= App_Dict_ValuesChanged;
+        
+        Resources.MergedDictionaries.Clear();
     }
 
     protected virtual void App_Dict_ValuesChanged(object? sender, EventArgs e)
