@@ -140,9 +140,13 @@ public partial class PopupService
 
             var hitTestResult = base.HitTest(point, uievent);
 
-            if (uievent?.Type is not UIEventType.Hover && hitTestResult is not UITextField)
+            if (uievent?.Type is not UIEventType.Hover && hitTestResult is not (UITextField or UITextView))
             {
-                viewcontroller.View!.EndEditing(true);
+                var responder = viewcontroller.View!.FindFirstResponder();
+                if (responder is not (null or MauiDatePicker))
+                {
+                    responder.EndEditing(true);
+                }
             }
 
             return hitTestResult == viewcontroller.CurrentPlatformView
@@ -166,5 +170,21 @@ public partial class PopupService
             .FirstOrDefault(x => x.ActivationState == UISceneActivationState.ForegroundActive);
 
         return connectedScene;
+    }
+}
+
+public static class PopupServiceExtensions
+{
+    public static UIView? FindFirstResponder(this UIView view)
+    {
+        if (view.IsFirstResponder) return view;
+
+        foreach (var subView in view.Subviews)
+        {
+            var responder = subView.FindFirstResponder();
+            if (responder is not null) return responder;
+        }
+
+        return null;
     }
 }
