@@ -44,7 +44,7 @@ public class PopupPage : ContentPage
 
         BackgroundColor = Color.FromArgb("#50000000");
 
-        Microsoft.Maui.Controls.PlatformConfiguration.iOSSpecific.Page.SetUseSafeArea(this, HasSystemPadding);
+        ToggleSystemPadding();
 
         this.Unloaded += PopupPage_Unloaded;
     }
@@ -53,7 +53,7 @@ public class PopupPage : ContentPage
     {
         var dict = Application.Current!.Resources as Microsoft.Maui.Controls.Internals.IResourceDictionary;
         dict.ValuesChanged -= App_Dict_ValuesChanged;
-        
+
         Resources.MergedDictionaries.Clear();
     }
 
@@ -73,8 +73,21 @@ public class PopupPage : ContentPage
 
         if (propertyName == HasSystemPaddingProperty.PropertyName)
         {
-            Microsoft.Maui.Controls.PlatformConfiguration.iOSSpecific.Page.SetUseSafeArea(this, HasSystemPadding);
+            ToggleSystemPadding();
         }
+    }
+
+    protected virtual void ToggleSystemPadding()
+    {
+#if NET10_0_OR_GREATER
+#if IOS
+        SafeAreaEdges = HasSystemPadding
+            ? new(SafeAreaRegions.Container)
+            : SafeAreaEdges.None;
+#endif
+#else
+        Microsoft.Maui.Controls.PlatformConfiguration.iOSSpecific.Page.SetUseSafeArea(this, HasSystemPadding);
+#endif
     }
 
     protected override bool OnBackButtonPressed()
@@ -160,14 +173,14 @@ public class PopupPage : ContentPage
         return Task.CompletedTask;
     }
 
-    public virtual void OnBackgroundCliked()
+    public virtual void OnBackgroundClicked()
     {
 
     }
 
     public virtual void SendBackgroundClick()
     {
-        OnBackgroundCliked();
+        OnBackgroundClicked();
 
         BackgroundClicked?.Invoke(this, new RoutedEventArgs());
 
@@ -272,7 +285,7 @@ public class PopupPage : ContentPage
     #region BackgroundClickedCommandParameter
     public object BackgroundClickedCommandParameter
     {
-        get { return (object)GetValue(BackgroundClickedCommandParameterProperty); }
+        get { return GetValue(BackgroundClickedCommandParameterProperty); }
         set { SetValue(BackgroundClickedCommandParameterProperty, value); }
     }
 

@@ -88,13 +88,13 @@ public partial class PopupService
             {
                 var child = view.GetChildAt(0)!;
 
-                var rawx = e.Event!.GetX();
-                var rawy = e.Event.GetY();
-                var childx = child.GetX();
-                var childy = child.GetY();
+                var rawX = e.Event!.GetX();
+                var rawY = e.Event.GetY();
+                var childX = child.GetX();
+                var childY = child.GetY();
 
-                if (rawx >= childx && rawx <= (child.Width + childx)
-                    && rawy >= childy && rawy <= (child.Height + childy))
+                if (rawX >= childX && rawX <= (child.Width + childX)
+                    && rawY >= childY && rawY <= (child.Height + childY))
                 {
                     if (keyboardListener.KeyboardVisible)
                     {

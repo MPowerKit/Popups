@@ -31,7 +31,11 @@ public class FadeAnimation : FadeBackgroundAnimation
 
         if (content is not null)
         {
+#if NET10_0_OR_GREATER
+            tasks.Add(content.FadeToAsync(_defaultOpacity, (uint)DurationIn.TotalMilliseconds, EasingIn));
+#else
             tasks.Add(content.FadeTo(_defaultOpacity, (uint)DurationIn.TotalMilliseconds, EasingIn));
+#endif
         }
 
         return Task.WhenAll(tasks);
@@ -43,7 +47,11 @@ public class FadeAnimation : FadeBackgroundAnimation
 
         if (content is not null)
         {
+#if NET10_0_OR_GREATER
+            tasks.Add(content.FadeToAsync(0, (uint)DurationOut.TotalMilliseconds, EasingOut));
+#else
             tasks.Add(content.FadeTo(0, (uint)DurationOut.TotalMilliseconds, EasingOut));
+#endif
         }
 
         return Task.WhenAll(tasks);

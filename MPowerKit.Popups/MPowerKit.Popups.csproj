@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFrameworks>net9.0;net9.0-android;net9.0-ios;net9.0-maccatalyst</TargetFrameworks>
-		<TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net9.0-windows10.0.26100.0</TargetFrameworks>
+		<TargetFrameworks>net9.0;net9.0-android;net9.0-ios;net9.0-maccatalyst;net10.0;net10.0-android;net10.0-ios;net10.0-maccatalyst</TargetFrameworks>
+		<TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net9.0-windows10.0.26100.0;net10.0-windows10.0.26100.0</TargetFrameworks>
 		
 		<UseMaui>true</UseMaui>
 		<SingleProject>true</SingleProject>
@@ -19,7 +19,7 @@
 
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 		<Title>MPowerKit.Popups</Title>
-		<Version>1.5.0</Version>
+		<Version>1.6.0</Version>
 		<Authors>MPowerKit,Alex Dobrynin</Authors>
 		<Description>.NET MAUI popup library which allows you to open MAUI pages as a popup. Also the library allows you to use very simple and flexible animations for showing popup pages.</Description>
 		<Copyright>MPowerKit</Copyright>

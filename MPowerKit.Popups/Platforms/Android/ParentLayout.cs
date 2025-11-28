@@ -91,10 +91,10 @@ public class ParentLayout : ConstraintLayout, ViewTreeObserver.IOnGlobalLayoutLi
         var centerParams = new LayoutParams(LayoutParams.MatchConstraint, LayoutParams.MatchConstraint);
         _platformView.LayoutParameters = centerParams;
 
-        ParentLayout.ToggleViewVisiblility(_top, insets.Top);
-        ParentLayout.ToggleViewVisiblility(_right, insets.Right);
-        ParentLayout.ToggleViewVisiblility(_bottom, insets.Bottom);
-        ParentLayout.ToggleViewVisiblility(_left, insets.Left);
+        ParentLayout.ToggleViewVisibility(_top, insets.Top);
+        ParentLayout.ToggleViewVisibility(_right, insets.Right);
+        ParentLayout.ToggleViewVisibility(_bottom, insets.Bottom);
+        ParentLayout.ToggleViewVisibility(_left, insets.Left);
 
         this.AddView(_top);
         this.AddView(_bottom);
@@ -182,13 +182,13 @@ public class ParentLayout : ConstraintLayout, ViewTreeObserver.IOnGlobalLayoutLi
         rightParams.Width = insets.Right;
         _right.LayoutParameters = rightParams;
 
-        ToggleViewVisiblility(_top, insets.Top);
-        ToggleViewVisiblility(_right, insets.Right);
-        ToggleViewVisiblility(_bottom, insets.Bottom);
-        ToggleViewVisiblility(_left, insets.Left);
+        ToggleViewVisibility(_top, insets.Top);
+        ToggleViewVisibility(_right, insets.Right);
+        ToggleViewVisibility(_bottom, insets.Bottom);
+        ToggleViewVisibility(_left, insets.Left);
     }
 
-    private static void ToggleViewVisiblility(View view, int size)
+    private static void ToggleViewVisibility(View view, int size)
     {
         view.Visibility = size > 0 ? ViewStates.Visible : ViewStates.Gone;
     }

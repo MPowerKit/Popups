@@ -72,8 +72,11 @@ public class MoveAnimation : FadeBackgroundAnimation
             {
                 content.TranslationX = leftOffset;
             }
-
+#if NET10_0_OR_GREATER
+            taskList.Add(content.TranslateToAsync(_defaultTranslationX, _defaultTranslationY, (uint)DurationIn.TotalMilliseconds, EasingIn));
+#else
             taskList.Add(content.TranslateTo(_defaultTranslationX, _defaultTranslationY, (uint)DurationIn.TotalMilliseconds, EasingIn));
+#endif
         }
 
         return Task.WhenAll(taskList);
@@ -111,7 +114,11 @@ public class MoveAnimation : FadeBackgroundAnimation
                 translationX = leftOffset;
             }
 
+#if NET10_0_OR_GREATER
+            taskList.Add(content.TranslateToAsync(translationX, translationY, (uint)DurationOut.TotalMilliseconds, EasingOut));
+#else
             taskList.Add(content.TranslateTo(translationX, translationY, (uint)DurationOut.TotalMilliseconds, EasingOut));
+#endif
         }
 
         return Task.WhenAll(taskList);

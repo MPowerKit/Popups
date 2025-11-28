@@ -133,23 +133,23 @@ public partial class PopupService
         {
         }
 
-        public override UIView? HitTest(CGPoint point, UIEvent? uievent)
+        public override UIView? HitTest(CGPoint point, UIEvent? uiEvent)
         {
-            var viewcontroller = (RootViewController as PageViewController)!;
-            var page = (viewcontroller.CurrentView as PopupPage)!;
+            var viewController = (RootViewController as PageViewController)!;
+            var page = (viewController.CurrentView as PopupPage)!;
 
-            var hitTestResult = base.HitTest(point, uievent);
+            var hitTestResult = base.HitTest(point, uiEvent);
 
-            if (uievent?.Type is not UIEventType.Hover && hitTestResult is not (UITextField or UITextView))
+            if (uiEvent?.Type is not UIEventType.Hover && hitTestResult is not (UITextField or UITextView))
             {
-                var responder = viewcontroller.View!.FindFirstResponder();
+                var responder = viewController.View!.FindFirstResponder();
                 if (responder is not (null or MauiDatePicker))
                 {
                     responder.EndEditing(true);
                 }
             }
 
-            return hitTestResult == viewcontroller.CurrentPlatformView
+            return hitTestResult == viewController.CurrentPlatformView
                 && page.BackgroundInputTransparent
                 ? null
                 : hitTestResult;
